@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-path
+        name="external_storage_root"
+        path="/" />
+    <external-path
+        name="external_path"
+        path="/" />
+    <!--/storage/emulated/0/Android/data/${applicationId}/files/apk/-->
+    <external-files-path
+        name="external_files_path"
+        path="/" />
+    <files-path
+        name="files"
+        path="/" />
+</paths>

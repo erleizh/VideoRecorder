@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:padding="15dp"
+    android:layout_height="match_parent">
+
+
+    <CheckBox
+        android:id="@+id/cbToggleFacing"
+        android:layout_width="33dp"
+        android:layout_height="33dp"
+        android:layout_gravity="bottom|end"
+        android:background="@drawable/ic_switch_camera"
+        android:button="@null" />
+</FrameLayout>

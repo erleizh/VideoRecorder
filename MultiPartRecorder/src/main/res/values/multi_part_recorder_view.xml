@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="MultiPartRecorderView">
+        <attr name="max_record_time" format="integer" />
+        <attr name="min_record_time" format="integer" />
+        <attr name="divider_width" format="dimension" />
+        <attr name="min_record_time_divider_color" format="color" />
+        <attr name="divider_color" format="color" />
+        <attr name="pause_divider_color" format="color" />
+        <attr name="remove_part_color" format="color" />
+        <attr name="foreground_color" format="color" />
+        <attr name="background_color" format="color" />
+    </declare-styleable>
+</resources>

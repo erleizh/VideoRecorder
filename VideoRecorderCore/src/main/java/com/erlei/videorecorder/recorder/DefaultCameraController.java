@@ -25,7 +25,7 @@ public class DefaultCameraController implements CameraController {
     protected VideoRecorder.Config mConfig;
     protected Camera mCamera;
     protected Camera.CameraBuilder mCameraBuilder;
-    protected CameraTextureCallback mCameraTextureCallBack;
+    protected OnDrawTextureListener mTextureCallBack;
     private ValueAnimator mSmoothZoomAnimator;
     private float mOldDist;
 
@@ -35,13 +35,12 @@ public class DefaultCameraController implements CameraController {
     }
 
 
-    @Override
-    public CameraTextureCallback getCameraTextureCallBack() {
-        return mCameraTextureCallBack;
+    public OnDrawTextureListener getTextureCallBack() {
+        return mTextureCallBack;
     }
 
-    public void setCameraTextureCallBack(CameraTextureCallback cameraTextureCallBack) {
-        mCameraTextureCallBack = cameraTextureCallBack;
+    public void setTextureCallBack(OnDrawTextureListener textureCallBack) {
+        mTextureCallBack = textureCallBack;
     }
 
     public void setCameraBuilder(Camera.CameraBuilder cameraBuilder) {

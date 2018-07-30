@@ -76,7 +76,7 @@ class VideoRecorder implements CameraGLView.CameraTextureCallback {
 
 //    //
 //    @Override
-//    public boolean modify(int texIn, int texOut, Size size) {
+//    public boolean drawTexture(int texIn, int texOut, Size size) {
 //        long l = System.currentTimeMillis();
 //        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, mPboIds.get(0));
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -97,7 +97,7 @@ class VideoRecorder implements CameraGLView.CameraTextureCallback {
     int index;
 
     @Override
-    public boolean modify(int i, int i1) {
+    public boolean drawTexture(int i, int i1) {
 //        GLES30.glPixelStorei(GLES30.GL_PACK_ALIGNMENT, 4);
 //        long l = System.currentTimeMillis();
 //        if (num_downloads < PBO_NUM) {
@@ -136,8 +136,8 @@ class VideoRecorder implements CameraGLView.CameraTextureCallback {
     int count = 1;
 //
 //    @Override
-//    public boolean modify(int texIn, int texOut, Size size) {
-//        LogUtil.loge("modify");
+//    public boolean drawTexture(int texIn, int texOut, Size size) {
+//        LogUtil.loge("drawTexture");
 //        LogUtil.loge("count : " + count++);
 ////        if (count < 60) return false;
 //        long l = System.currentTimeMillis();

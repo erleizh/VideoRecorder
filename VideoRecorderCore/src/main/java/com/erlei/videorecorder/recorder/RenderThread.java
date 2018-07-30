@@ -10,7 +10,6 @@ import android.view.Surface;
 import com.erlei.videorecorder.camera.Size;
 import com.erlei.videorecorder.gles.EglCore;
 import com.erlei.videorecorder.gles.EglSurfaceBase;
-import com.erlei.videorecorder.gles.OffscreenSurface;
 import com.erlei.videorecorder.gles.WindowSurface;
 import com.erlei.videorecorder.util.FPSCounterFactory;
 import com.erlei.videorecorder.util.LogUtil;
@@ -45,8 +44,8 @@ public class RenderThread extends HandlerThread implements SurfaceTexture.OnFram
     public void run() {
         super.run();
         mConfig.cameraController.closeCamera();
-        if (mConfig.cameraController.getCameraTextureCallBack() != null) {
-            mConfig.cameraController.getCameraTextureCallBack().onCameraViewStopped();
+        if (mConfig.mDrawTextureListener != null) {
+            mConfig.mDrawTextureListener.onCameraStopped();
         }
         if (mCallBack != null) mCallBack.onStopped();
         mRenderer.destroy();
@@ -88,15 +87,16 @@ public class RenderThread extends HandlerThread implements SurfaceTexture.OnFram
         mWindowSurface.makeCurrent();
 
         mRenderer = new CameraGLRenderer(mConfig.cameraController);
+        if (mConfig.mDrawTextureListener != null)
+            mRenderer.setOnDrawTextureListener(mConfig.mDrawTextureListener);
         mRenderer.getTexture().setOnFrameAvailableListener(this);
 
         mIsStarted = mConfig.cameraController.openCamera(mRenderer.getTexture());
         if (mIsStarted) {
             Size surfaceSize = mConfig.cameraController.getSurfaceSize();
             mRenderer.setPreviewSize(surfaceSize);
-            CameraController.CameraTextureCallback callback = mConfig.cameraController.getCameraTextureCallBack();
-            if (callback != null) {
-                callback.onCameraViewStarted(surfaceSize);
+            if (mConfig.mDrawTextureListener != null) {
+                mConfig.mDrawTextureListener.onCameraStarted(surfaceSize);
             }
         }
         if (mCallBack != null) mCallBack.onPrepared(mEglCore);

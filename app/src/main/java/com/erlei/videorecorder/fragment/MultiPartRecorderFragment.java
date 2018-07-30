@@ -109,28 +109,27 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
         });
 
         mBtnRecord.setOnTouchListener(new View.OnTouchListener() {
-            private View mView;
             private final RecordGestureDetector mGestureDetector = new RecordGestureDetector(new RecordGestureDetector.SimpleOnGestureListener() {
                 private static final String TAG = "TouchGestureDetector";
 
                 @Override
-                public void onLongPressDown(MotionEvent e) {
+                public void onLongPressDown(View view,MotionEvent e) {
                     LogUtil.logd(TAG, "onLongPressDown");
-                    mView.animate().scaleX(0.8f).scaleY(0.8f).setDuration(200).start();
-                    mView.setSelected(true);
+                    view.animate().scaleX(0.8f).scaleY(0.8f).setDuration(200).start();
+                    view.setSelected(true);
                     startRecord();
                 }
 
                 @Override
-                public void onLongPressUp(MotionEvent e) {
-                    mView.animate().scaleX(1f).scaleY(1f).setDuration(200).start();
-                    mView.setSelected(false);
+                public void onLongPressUp(View view,MotionEvent e) {
+                    view.animate().scaleX(1f).scaleY(1f).setDuration(200).start();
+                    view.setSelected(false);
                     stopRecord();
                     LogUtil.logd(TAG, "onLongPressUp");
                 }
 
                 @Override
-                public void onSingleTap(MotionEvent e) {
+                public void onSingleTap(View view,MotionEvent e) {
                     LogUtil.logd(TAG, "onSingleTap " + System.currentTimeMillis());
                     mRecorder.takePicture(new IVideoRecorder.TakePictureCallback() {
                         @Override
@@ -155,8 +154,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                mView = v;
-                return mGestureDetector.onTouchEvent(event);
+                return mGestureDetector.onTouchEvent(v,event);
             }
         });
         view.findViewById(R.id.btnNext).setOnClickListener(new View.OnClickListener() {

@@ -29,7 +29,7 @@ import static com.erlei.videorecorder.gles.GLUtil.checkLocation;
  * 3 . mTexDraw[0]  2d 纹理,
  * <p>
  * 创建了一个帧缓冲 mFBO[0] , CameraGlView 有 getCameraTextureCallback 会使用这个fbo
- * 先将相机纹理数据绘制到这个帧缓冲区里面 ,然后调用 modify
+ * 先将相机纹理数据绘制到这个帧缓冲区里面 ,然后调用 drawTexture
  * 会传递两个纹理id , 回调方法需要将修改后的纹理数据从 mTexFBO[0] 转到 mTexDraw[0]
  * 根据回调方法的返回值决定将mTexFBO[0] 或 mTexDraw[0] 纹理的数据绘制到屏幕
  * <p>
@@ -73,6 +73,7 @@ class CameraGLRenderer {
     private float[] mMVPMatrixOES, mTexMatrixOES, mMVPMatrix2D = new float[16], mTexMatrix2D = new float[16];
     private Size mSurfaceSize;
     private CameraController mCameraController;
+    private OnDrawTextureListener mDrawTextureListener;
 
     public CameraGLRenderer(CameraController cameraController) {
         this(cameraController, null);
@@ -145,15 +146,15 @@ class CameraGLRenderer {
         if (mTexture == null) return;
         synchronized (this) {
             mTexture.updateTexImage();
+            mTexture.getTransformMatrix(mTexMatrixOES);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-            CameraController.CameraTextureCallback callback = mCameraController.getCameraTextureCallBack();
-            if (callback != null) {
+            if (mDrawTextureListener != null) {
                 // texCamera(OES) -> texFBO
                 drawTexture(mTexCamera[0], true, mFBO[0]);
 
                 // call user code (texFBO -> texDraw)
-                if (callback.modify(mTexFBO[0], mTexDraw[0])) {
+                if (mDrawTextureListener.onDrawTexture(mTexFBO[0], mTexDraw[0])) {
                     // texDraw -> screen
                     drawTexture(mTexDraw[0], false, 0);
                 } else {
@@ -191,7 +192,6 @@ class CameraGLRenderer {
             GLES20.glUniformMatrix4fv(uMVPMatrixOES, 1, false, mMVPMatrixOES, 0);
             checkGlError("glUniformMatrix4fv");
             // Copy the texture transformation matrix over.
-            mTexture.getTransformMatrix(mTexMatrixOES);
             GLES20.glUniformMatrix4fv(uTexMatrixOES, 1, false, mTexMatrixOES, 0);
             checkGlError("glUniformMatrix4fv");
 
@@ -225,16 +225,11 @@ class CameraGLRenderer {
     }
 
 
-
     protected void destroy() {
         synchronized (this) {
             LogUtil.logd("stopPreview");
             deleteSurfaceTexture();
             deleteFBO();
-        }
-        CameraController.CameraTextureCallback callback = mCameraController.getCameraTextureCallBack();
-        if (callback != null) {
-            callback.onCameraViewStopped();
         }
     }
 
@@ -424,4 +419,7 @@ class CameraGLRenderer {
         return program;
     }
 
+    public void setOnDrawTextureListener(OnDrawTextureListener drawTextureListener) {
+        mDrawTextureListener = drawTextureListener;
+    }
 }

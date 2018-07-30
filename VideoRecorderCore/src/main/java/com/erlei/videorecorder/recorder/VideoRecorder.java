@@ -336,6 +336,14 @@ public class VideoRecorder implements RenderThread.RenderCallBack, IVideoRecorde
         }
 
         /**
+         * @param listener 纹理绘制监听
+         */
+        public Builder setDrawTextureListener(OnDrawTextureListener listener) {
+            mP.mDrawTextureListener = listener;
+            return this;
+        }
+
+        /**
          * @param file 设置输出文件 , 无论一个 VideoRecorder实例开启几次录制 , 之后最后一次的录制文件会保存
          */
         public Builder setOutPutFile(File file) {
@@ -397,6 +405,7 @@ public class VideoRecorder implements RenderThread.RenderCallBack, IVideoRecorde
     public static class Config implements Cloneable {
         ICameraPreview cameraPreview;
         CameraController cameraController;
+        OnDrawTextureListener mDrawTextureListener;
         Context context;
         VideoRecorderHandler viewHandler;
         boolean logFPS;
@@ -525,6 +534,10 @@ public class VideoRecorder implements RenderThread.RenderCallBack, IVideoRecorde
 
         public void setCameraBuilder(Camera.CameraBuilder cameraBuilder) {
             this.cameraBuilder = cameraBuilder;
+        }
+
+        public void setDrawTextureListener(OnDrawTextureListener drawTextureListener) {
+            this.mDrawTextureListener = drawTextureListener;
         }
 
         @Override

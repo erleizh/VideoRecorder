@@ -37,6 +37,7 @@ public class SettingsDialogFragment extends DialogFragment {
     private AppCompatSpinner mSpWhiteBalance;
     private AppCompatSpinner mSpSceneMode;
     private AppCompatSpinner mSpFPS;
+    private AppCompatSpinner mSpISOMode;
     private AppCompatSeekBar mSbZoom;
 
     @Override
@@ -104,6 +105,12 @@ public class SettingsDialogFragment extends DialogFragment {
         });
 
         initSpinner(mSpFocus, cameraParameters.getSupportedFocusModes(), "focus-mode", new Callback() {
+            @Override
+            public void set(String key) {
+                mCameraController.setFocusMode(key);
+            }
+        });
+        initSpinner(mSpISOMode, , "focus-mode", new Callback() {
             @Override
             public void set(String key) {
                 mCameraController.setFocusMode(key);

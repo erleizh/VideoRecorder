@@ -128,7 +128,9 @@ public class RenderThread extends HandlerThread implements SurfaceTexture.OnFram
     private void onSizeChanged(Size size) {
         LogUtil.logd(TAG, "onSizeChanged" + size);
         mRenderer.setPreviewSize(size);
-
+        if (mConfig.mDrawTextureListener != null) {
+            mConfig.mDrawTextureListener.onSizeChanged(size);
+        }
     }
 
     /**

@@ -26,4 +26,9 @@ public interface OnDrawTextureListener {
      * @return `true` if `texOut` should be displayed, `false` - to show `texIn`
      */
     boolean onDrawTexture(int texIn, int texOut);
+
+    /**
+     * @param size surfaceSize
+     */
+    void onSizeChanged(Size size);
 }

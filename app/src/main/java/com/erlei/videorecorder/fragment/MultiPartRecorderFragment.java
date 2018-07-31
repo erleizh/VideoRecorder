@@ -28,6 +28,8 @@ import com.erlei.videorecorder.BuildConfig;
 import com.erlei.videorecorder.R;
 import com.erlei.videorecorder.camera.Camera;
 import com.erlei.videorecorder.camera.Size;
+import com.erlei.videorecorder.effects.TextOverlayEffect;
+import com.erlei.videorecorder.effects.VideoEffects;
 import com.erlei.videorecorder.recorder.CameraController;
 import com.erlei.videorecorder.recorder.DefaultCameraPreview;
 import com.erlei.videorecorder.recorder.ICameraPreview;
@@ -113,7 +115,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 private static final String TAG = "TouchGestureDetector";
 
                 @Override
-                public void onLongPressDown(View view,MotionEvent e) {
+                public void onLongPressDown(View view, MotionEvent e) {
                     LogUtil.logd(TAG, "onLongPressDown");
                     view.animate().scaleX(0.8f).scaleY(0.8f).setDuration(200).start();
                     view.setSelected(true);
@@ -121,7 +123,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 }
 
                 @Override
-                public void onLongPressUp(View view,MotionEvent e) {
+                public void onLongPressUp(View view, MotionEvent e) {
                     view.animate().scaleX(1f).scaleY(1f).setDuration(200).start();
                     view.setSelected(false);
                     stopRecord();
@@ -129,7 +131,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 }
 
                 @Override
-                public void onSingleTap(View view,MotionEvent e) {
+                public void onSingleTap(View view, MotionEvent e) {
                     LogUtil.logd(TAG, "onSingleTap " + System.currentTimeMillis());
                     mRecorder.takePicture(new IVideoRecorder.TakePictureCallback() {
                         @Override
@@ -154,7 +156,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                return mGestureDetector.onTouchEvent(v,event);
+                return mGestureDetector.onTouchEvent(v, event);
             }
         });
         view.findViewById(R.id.btnNext).setOnClickListener(new View.OnClickListener() {
@@ -304,6 +306,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 .setCallbackHandler(new CallbackHandler())
                 .setLogFPSEnable(false)
                 .setCameraBuilder(cameraBuilder)
+                .setDrawTextureListener(new TextOverlayEffect())
                 .setOutPutPath(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), File.separator + "VideoRecorder").getAbsolutePath())
                 .setFrameRate(30)
                 .setChannelCount(1);
@@ -313,12 +316,12 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 .addPartListener(new MultiPartRecorder.VideoPartListener() {
                     @Override
                     public void onRecordVideoPartStarted(MultiPartRecorder.Part part) {
-//                LogUtil.logd("onRecordVideoPartStarted \t" + part.toString());
+                        LogUtil.logd("onRecordVideoPartStarted \t" + part.toString());
                     }
 
                     @Override
                     public void onRecordVideoPartSuccess(MultiPartRecorder.Part part) {
-//                LogUtil.logd("onRecordVideoPartSuccess \t" + part.toString());
+                        LogUtil.logd("onRecordVideoPartSuccess \t" + part.toString());
                     }
 
                     @Override
@@ -390,8 +393,6 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
         mCameraController.closeCamera();
         mCameraController.openCamera(mRecorder.getPreviewTexture());
         mRecorder.onSizeChanged(surfaceSize.getWidth(), surfaceSize.getHeight());
-
-
     }
 
     // TODO: 2018/6/26 暂时让他泄露吧~

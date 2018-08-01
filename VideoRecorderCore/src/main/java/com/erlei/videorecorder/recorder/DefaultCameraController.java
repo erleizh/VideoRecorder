@@ -4,9 +4,12 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.text.TextUtils;
+import android.util.SparseArray;
 import android.view.MotionEvent;
 
 import com.erlei.videorecorder.camera.Camera;
@@ -14,6 +17,8 @@ import com.erlei.videorecorder.camera.FpsRange;
 import com.erlei.videorecorder.camera.Size;
 import com.erlei.videorecorder.util.LogUtil;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
@@ -67,7 +72,7 @@ public class DefaultCameraController implements CameraController {
 
     @Override
     public void setZoomOnTouch(MotionEvent event) {
-        if (event.getPointerCount() < 2 ||  !isOpen()) return;
+        if (event.getPointerCount() < 2 || !isOpen()) return;
         checkCameraState();
         android.hardware.Camera.Parameters cameraParameters = mCamera.getCameraParameters();
         if (cameraParameters == null) return;
@@ -80,9 +85,9 @@ public class DefaultCameraController implements CameraController {
                 int maxZoom = cameraParameters.getMaxZoom();
                 int zoom = cameraParameters.getZoom();
                 if (newDist > mOldDist) {
-                    setZoom( (zoom + maxZoom / 30));
+                    setZoom((zoom + maxZoom / 30));
                 } else if (newDist < mOldDist) {
-                    setZoom( (zoom - maxZoom / 30));
+                    setZoom((zoom - maxZoom / 30));
                 }
                 mOldDist = newDist;
                 break;
@@ -259,7 +264,7 @@ public class DefaultCameraController implements CameraController {
         if (cameraParameters.isZoomSupported()) {
             int currentZoom = cameraParameters.getZoom();
             int maxZoom = cameraParameters.getMaxZoom();
-            int target = clamp(zoom,0,maxZoom);
+            int target = clamp(zoom, 0, maxZoom);
             if (zoom == currentZoom) return;
             if (cameraParameters.isSmoothZoomSupported()) {
                 //支持平滑缩放
@@ -450,6 +455,12 @@ public class DefaultCameraController implements CameraController {
     public void toggleFacing() {
         checkCameraState();
         mCamera.toggleFacing();
+    }
+
+    @Override
+    public List<String> getSupportedModes(String... modes) {
+        checkCameraState();
+        return mCamera.getSupportedModes(modes);
     }
 
 

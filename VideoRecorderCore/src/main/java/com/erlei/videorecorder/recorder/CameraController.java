@@ -207,4 +207,12 @@ public interface CameraController {
      */
     void toggleFacing();
 
+    /**
+     * 获取相机支持的模式,相机打开之后才能调用
+     *
+     * @param modes    modes
+     */
+    List<String> getSupportedModes(String... modes);
+
+
 }

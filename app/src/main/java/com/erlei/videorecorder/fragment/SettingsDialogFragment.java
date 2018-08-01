@@ -110,7 +110,7 @@ public class SettingsDialogFragment extends DialogFragment {
                 mCameraController.setFocusMode(key);
             }
         });
-        initSpinner(mSpISOMode, , "focus-mode", new Callback() {
+        initSpinner(mSpISOMode,mCameraController.getSupportedModes("iso-values") , "iso", new Callback() {
             @Override
             public void set(String key) {
                 mCameraController.setFocusMode(key);
@@ -206,6 +206,7 @@ public class SettingsDialogFragment extends DialogFragment {
         mSpFocus = view.findViewById(R.id.spFocus);
         mSpWhiteBalance = view.findViewById(R.id.spWhiteBalance);
         mSpSceneMode = view.findViewById(R.id.spSceneMode);
+        mSpISOMode = view.findViewById(R.id.spISOMode);
         mSbZoom = view.findViewById(R.id.sbZoom);
         mSpFPS = view.findViewById(R.id.spFPS);
     }

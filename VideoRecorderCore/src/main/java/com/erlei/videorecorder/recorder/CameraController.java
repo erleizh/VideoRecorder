@@ -215,4 +215,10 @@ public interface CameraController {
     List<String> getSupportedModes(String... modes);
 
 
+    /**
+     * 设置模式
+     * @param key key
+     * @param value value
+     */
+    void setMode(String key, String value);
 }

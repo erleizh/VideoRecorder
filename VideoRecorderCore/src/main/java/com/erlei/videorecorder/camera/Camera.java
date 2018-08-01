@@ -832,7 +832,6 @@ public class Camera {
 
 
     private ArrayList<String> getSupportedModesFromCamera(String... modes) {
-
         android.hardware.Camera.Parameters cameraParameters = getCameraParameters();
         if (cameraParameters == null) return null;
         String flatten = cameraParameters.flatten();
@@ -875,7 +874,7 @@ public class Camera {
             HashMap<String, String> map = mSupportedModes.get(cameraId);
             for (String mode : modes) {
                 String value = map.get(mode);
-                if (!TextUtils.isEmpty(value)) supportedModes.add(value);
+                if (!TextUtils.isEmpty(value)) supportedModes.addAll(split(value));
             }
             return supportedModes;
         } else {
@@ -884,9 +883,29 @@ public class Camera {
 
     }
 
+    private ArrayList<String> split(String str) {
+        if (str == null) return null;
+
+        TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+        splitter.setString(str);
+        ArrayList<String> substrings = new ArrayList<String>();
+        for (String s : splitter) {
+            substrings.add(s);
+        }
+        return substrings;
+    }
+
     public int getCameraId() {
         if (mCamera == null) return -1;
         return mCameraId;
+    }
+
+    public void setMode(String key, String value) {
+        if (mCamera == null) return;
+        android.hardware.Camera.Parameters parameters = mCamera.getParameters();
+        if (parameters == null) return;
+        parameters.set(key, value);
+        mCamera.setParameters(parameters);
     }
 
     @SuppressWarnings("unused")

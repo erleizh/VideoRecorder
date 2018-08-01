@@ -113,7 +113,7 @@ public class SettingsDialogFragment extends DialogFragment {
         initSpinner(mSpISOMode,mCameraController.getSupportedModes("iso-values") , "iso", new Callback() {
             @Override
             public void set(String key) {
-                mCameraController.setFocusMode(key);
+                mCameraController.setMode("iso",key);
             }
         });
 

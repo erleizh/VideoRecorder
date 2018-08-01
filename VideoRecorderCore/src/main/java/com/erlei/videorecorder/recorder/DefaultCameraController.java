@@ -463,6 +463,12 @@ public class DefaultCameraController implements CameraController {
         return mCamera.getSupportedModes(modes);
     }
 
+    @Override
+    public void setMode(String key, String value) {
+        checkCameraState();
+        mCamera.setMode(key,value);
+    }
+
 
     private void checkCameraState() {
         if (mCamera == null) {

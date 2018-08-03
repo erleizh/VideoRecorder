@@ -35,6 +35,7 @@ import static com.erlei.videorecorder.gles.GLUtil.checkLocation;
  * <p>
  */
 class CameraGLRenderer {
+    private static final String TAG = "CameraGLRenderer";
 
     private static final String sVertexShader = ""
             + "uniform mat4 uMVPMatrix;\n"
@@ -142,6 +143,8 @@ class CameraGLRenderer {
     }
 
 
+    private long mLastDrawTime;
+
     public void onDrawFrame() {
         if (mTexture == null) return;
         synchronized (this) {
@@ -151,15 +154,27 @@ class CameraGLRenderer {
 
             if (mDrawTextureListener != null) {
                 // texCamera(OES) -> texFBO
+                if (LogUtil.LOG_ENABLE) mLastDrawTime = System.nanoTime();
                 drawTexture(mTexCamera[0], true, mFBO[0]);
-
+                if (LogUtil.LOG_ENABLE)
+                    LogUtil.logi(TAG, "drawTexture -> texFBO = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 // call user code (texFBO -> texDraw)
-                if (mDrawTextureListener.onDrawTexture(mTexFBO[0], mTexDraw[0])) {
+                if (LogUtil.LOG_ENABLE) mLastDrawTime = System.nanoTime();
+                boolean drawTexture = mDrawTextureListener.onDrawTexture(mFBO[0],mTexFBO[0], mTexDraw[0]);
+                if (LogUtil.LOG_ENABLE)
+                    LogUtil.logi(TAG, "onDrawTexture = " + drawTexture + " = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
+                if (drawTexture) {
+                    mLastDrawTime = System.nanoTime();
                     // texDraw -> screen
                     drawTexture(mTexDraw[0], false, 0);
+                    if (LogUtil.LOG_ENABLE)
+                        LogUtil.logi(TAG, "drawTexture -> screen = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 } else {
+                    mLastDrawTime = System.nanoTime();
                     // texFBO -> screen
                     drawTexture(mTexFBO[0], false, 0);
+                    if (LogUtil.LOG_ENABLE)
+                        LogUtil.logi(TAG, "drawTexture -> screen = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 }
             } else {
                 // texCamera(OES) -> screen
@@ -247,7 +262,7 @@ class CameraGLRenderer {
         LogUtil.logd("initFBO(" + width + "x" + height + ")");
 
         deleteFBO();
-
+//        mTexFBO[0], mTexDraw[0]
         GLES20.glGenTextures(1, mTexDraw, 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexDraw[0]);
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);

@@ -15,7 +15,7 @@ public class VideoEffects implements OnDrawTextureListener {
     }
 
     @Override
-    public boolean onDrawTexture(int texIn, int texOut) {
+    public boolean onDrawTexture(int FBOin, int texIn, int texOut) {
         return false;
     }
 

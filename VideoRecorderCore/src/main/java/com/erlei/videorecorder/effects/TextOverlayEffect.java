@@ -12,7 +12,7 @@ public class TextOverlayEffect extends OverlayEffect {
     public TextOverlayEffect() {
         mPaint = new Paint();
         mPaint.setColor(Color.YELLOW);
-        mPaint.setAlpha(230);
+//        mPaint.setAlpha(230);
         mPaint.setTextSize(40);
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setAntiAlias(true);

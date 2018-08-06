@@ -28,7 +28,6 @@ import com.erlei.videorecorder.BuildConfig;
 import com.erlei.videorecorder.R;
 import com.erlei.videorecorder.camera.Camera;
 import com.erlei.videorecorder.camera.Size;
-import com.erlei.videorecorder.effects.VideoEffects;
 import com.erlei.videorecorder.recorder.CameraController;
 import com.erlei.videorecorder.recorder.DefaultCameraPreview;
 import com.erlei.videorecorder.recorder.ICameraPreview;
@@ -285,7 +284,6 @@ public class CameraGLSurfaceViewFragment extends Fragment implements SettingsDia
                 .setCallbackHandler(new CallbackHandler())
                 .setLogFPSEnable(false)
                 .setCameraBuilder(cameraBuilder)
-                .setDrawTextureListener(new VideoEffects())
                 .setOutPutPath(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), File.separator + "VideoRecorder").getAbsolutePath())
                 .setFrameRate(30)
                 .setChannelCount(1);

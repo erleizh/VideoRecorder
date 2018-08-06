@@ -28,8 +28,9 @@ import com.erlei.videorecorder.BuildConfig;
 import com.erlei.videorecorder.R;
 import com.erlei.videorecorder.camera.Camera;
 import com.erlei.videorecorder.camera.Size;
+import com.erlei.videorecorder.effects.EffectsManager;
+import com.erlei.videorecorder.effects.OverlayEffect;
 import com.erlei.videorecorder.effects.TextOverlayEffect;
-import com.erlei.videorecorder.effects.VideoEffects;
 import com.erlei.videorecorder.recorder.CameraController;
 import com.erlei.videorecorder.recorder.DefaultCameraPreview;
 import com.erlei.videorecorder.recorder.ICameraPreview;
@@ -51,6 +52,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
     private TextView mTvFps;
     private MultiPartRecorderView mRecorderIndicator;
     private CameraController mCameraController;
+    private EffectsManager mEffectsManager;
 
 
     public static MultiPartRecorderFragment newInstance() {
@@ -298,15 +300,20 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
 
         Camera.CameraBuilder cameraBuilder = new Camera.CameraBuilder(getActivity())
                 .useDefaultConfig()
+                .setFacing(android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT)
                 .setPreviewSize(new Size(2048, 1536))
                 .setRecordingHint(true)
                 .setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+
+        mEffectsManager = new EffectsManager();
+        mEffectsManager.addEffect(new TextOverlayEffect());
+        mEffectsManager.addEffect(new OverlayEffect());
 
         VideoRecorder.Builder builder = new VideoRecorder.Builder(cameraPreview)
                 .setCallbackHandler(new CallbackHandler())
                 .setLogFPSEnable(false)
                 .setCameraBuilder(cameraBuilder)
-                .setDrawTextureListener(new TextOverlayEffect())
+                .setDrawTextureListener(mEffectsManager)
                 .setOutPutPath(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), File.separator + "VideoRecorder").getAbsolutePath())
                 .setFrameRate(30)
                 .setChannelCount(1);

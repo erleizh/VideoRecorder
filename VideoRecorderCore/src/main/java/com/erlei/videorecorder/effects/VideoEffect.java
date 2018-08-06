@@ -6,7 +6,7 @@ public interface VideoEffect {
 
     void prepare(Size size);
 
-    void applyEffect(int fbo,int textureIdIn,int textureIdOut);
+    int applyEffect(int fbo,int textureIdIn);
 
     void destroy();
 }

@@ -69,7 +69,8 @@ class CameraGLRenderer {
     private int mProgramOES, mProgram2D;
     private int aPosOES, aTexCoordOES, vPos2D, vTexCoord2D, uMVPMatrixOES, uTexMatrixOES, uMVPMatrix2D, uTexMatrix2D, uTextureOES, uTexture2D;
     private int mFBOWidth, mFBOHeight;
-    private int[] mTexCamera = {0}, mTexFBO = {0}, mTexDraw = {0}, mFBO = {0};
+    private int[] mTexCamera = {0}, mTexFBO = {0},/* mTexDraw = {0},*/
+            mFBO = {0};
     private SurfaceTexture mTexture;
     private float[] mMVPMatrixOES, mTexMatrixOES, mMVPMatrix2D = new float[16], mTexMatrix2D = new float[16];
     private Size mSurfaceSize;
@@ -160,13 +161,13 @@ class CameraGLRenderer {
                     LogUtil.logd(TAG, "drawTexture -> texFBO = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 // call user code (texFBO -> texDraw)
                 if (LogUtil.LOG_ENABLE) mLastDrawTime = System.nanoTime();
-                boolean drawTexture = mDrawTextureListener.onDrawTexture(mFBO[0], mTexFBO[0], mTexDraw[0]);
+                int drawTexture = mDrawTextureListener.onDrawTexture(mFBO[0], mTexFBO[0]);
                 if (LogUtil.LOG_ENABLE)
                     LogUtil.logd(TAG, "onDrawTexture = " + drawTexture + " = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
-                if (drawTexture) {
+                if (drawTexture <= 0) {
                     mLastDrawTime = System.nanoTime();
                     // texDraw -> screen
-                    drawTexture(mTexDraw[0], false, 0);
+                    drawTexture(drawTexture, false, 0);
                     if (LogUtil.LOG_ENABLE)
                         LogUtil.logd(TAG, "drawTexture -> screen = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 } else {
@@ -253,7 +254,7 @@ class CameraGLRenderer {
         GLES20.glDeleteFramebuffers(1, mFBO, 0);
 
         deleteTex(mTexFBO);
-        deleteTex(mTexDraw);
+//        deleteTex(mTexDraw);
         mFBOWidth = mFBOHeight = 0;
     }
 
@@ -261,14 +262,14 @@ class CameraGLRenderer {
         LogUtil.logd("initFBO(" + width + "x" + height + ")");
 
         deleteFBO();
-//        mTexFBO[0], mTexDraw[0]
-        GLES20.glGenTextures(1, mTexDraw, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexDraw[0]);
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+
+//        GLES20.glGenTextures(1, mTexDraw, 0);
+//        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexDraw[0]);
+//        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
         GLES20.glGenTextures(1, mTexFBO, 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexFBO[0]);

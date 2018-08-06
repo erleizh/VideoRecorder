@@ -3,14 +3,12 @@ package com.erlei.videorecorder.effects;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.opengl.GLES10;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
 
 import com.erlei.videorecorder.camera.Size;
 import com.erlei.videorecorder.gles.GLUtil;
-import com.erlei.videorecorder.util.LogUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -27,7 +25,7 @@ public abstract class CanvasOverlayEffect implements VideoEffect {
     private Bitmap mCanvasBitmap;
     private int mTexture;
     private Size mSize;
-    private OverlayRender mRender;
+    private Render mRender;
 
 
     @Override
@@ -36,18 +34,17 @@ public abstract class CanvasOverlayEffect implements VideoEffect {
         initCanvas(size);
         mTexture = GLUtil.loadTexture(mCanvasBitmap, GLUtil.NO_TEXTURE, false);
 
-        initOverlayRender();
+        initRender();
     }
 
     @Override
-    public void applyEffect(int fbo, int textureIdIn, int textureIdOut) {
+    public int applyEffect(int fbo, int textureIdIn) {
         clearCanvas();
 
         drawCanvas(mCanvas);
 
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexture);
 
@@ -57,6 +54,7 @@ public abstract class CanvasOverlayEffect implements VideoEffect {
 
         GLES20.glDisable(GLES20.GL_BLEND);
 
+        return textureIdIn;
     }
 
     @Override
@@ -64,8 +62,8 @@ public abstract class CanvasOverlayEffect implements VideoEffect {
 
     }
 
-    private void initOverlayRender() {
-        mRender = new OverlayRender(mSize);
+    private void initRender() {
+        mRender = new Render(mSize);
     }
 
     protected void initCanvas(Size size) {
@@ -83,9 +81,9 @@ public abstract class CanvasOverlayEffect implements VideoEffect {
     protected abstract void drawCanvas(Canvas canvas);
 
 
-    private class OverlayRender {
+    private class Render {
 
-        private static final String TAG = "OverlayRender";
+        private static final String TAG = "Render";
 
         private final float[] sVertexCoords = {
                 -1.0f, -1.0f,       // 0 bottom left
@@ -123,7 +121,7 @@ public abstract class CanvasOverlayEffect implements VideoEffect {
         private FloatBuffer mTextureBuffer, mVertexBuffer;
         private float[] mMVPMatrix2D = new float[16], mTexMatrix2D = new float[16];
 
-        public OverlayRender(Size size) {
+        public Render(Size size) {
             initFloatBuffer();
             Matrix.setIdentityM(mMVPMatrix2D, 0);
             Matrix.setIdentityM(mTexMatrix2D, 0);

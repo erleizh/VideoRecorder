@@ -12,7 +12,7 @@ public class TextOverlayEffect extends CanvasOverlayEffect {
     public TextOverlayEffect() {
         mPaint = new Paint();
         mPaint.setColor(Color.YELLOW);
-//        mPaint.setAlpha(230);
+        mPaint.setAlpha(230);
         mPaint.setTextSize(40);
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setAntiAlias(true);
@@ -26,4 +26,5 @@ public class TextOverlayEffect extends CanvasOverlayEffect {
 
 
     }
+
 }

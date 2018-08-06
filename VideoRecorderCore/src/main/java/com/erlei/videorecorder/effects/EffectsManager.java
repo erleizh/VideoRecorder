@@ -48,11 +48,12 @@ public class EffectsManager implements OnDrawTextureListener {
     }
 
     @Override
-    public boolean onDrawTexture(int FBOin, int texIn, int texOut) {
+    public int onDrawTexture(int FBOin, int texIn) {
+        int textureId = texIn;
         for (VideoEffect videoEffect : mEffects) {
-            videoEffect.applyEffect(FBOin, texIn, texOut);
+            textureId = videoEffect.applyEffect(FBOin, textureId);
         }
-        return false;
+        return textureId;
     }
 
     @Override

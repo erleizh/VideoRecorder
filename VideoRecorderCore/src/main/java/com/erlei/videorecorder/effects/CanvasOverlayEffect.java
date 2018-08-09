@@ -8,6 +8,7 @@ import android.opengl.GLUtils;
 import android.opengl.Matrix;
 
 import com.erlei.videorecorder.camera.Size;
+import com.erlei.videorecorder.gles.CoordinateTransform;
 import com.erlei.videorecorder.gles.GLUtil;
 
 import java.nio.ByteBuffer;
@@ -126,8 +127,7 @@ public abstract class CanvasOverlayEffect implements VideoEffect {
             Matrix.setIdentityM(mMVPMatrix2D, 0);
             Matrix.setIdentityM(mTexMatrix2D, 0);
 
-//            Matrix.orthoM(mMVPMatrix2D, 0, 0, size.getWidth(), 0, size.getHeight(), -1, 1);
-//            Matrix.multiplyMM(mMVPMatrix2D, 0, mTexMatrix2D, 0, mMVPMatrix2D, 0);
+            CoordinateTransform.flip(mMVPMatrix2D, false, true);
 
             mProgram = GLUtil.createProgram(sVertexShader, sFragment2DShader);
 

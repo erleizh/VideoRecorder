@@ -29,7 +29,6 @@ import com.erlei.videorecorder.R;
 import com.erlei.videorecorder.camera.Camera;
 import com.erlei.videorecorder.camera.Size;
 import com.erlei.videorecorder.effects.EffectsManager;
-import com.erlei.videorecorder.effects.OverlayEffect;
 import com.erlei.videorecorder.effects.TextOverlayEffect;
 import com.erlei.videorecorder.recorder.CameraController;
 import com.erlei.videorecorder.recorder.DefaultCameraPreview;
@@ -307,7 +306,6 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
 
         mEffectsManager = new EffectsManager();
         mEffectsManager.addEffect(new TextOverlayEffect());
-        mEffectsManager.addEffect(new OverlayEffect());
 
         VideoRecorder.Builder builder = new VideoRecorder.Builder(cameraPreview)
                 .setCallbackHandler(new CallbackHandler())

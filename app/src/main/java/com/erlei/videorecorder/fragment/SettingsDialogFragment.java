@@ -37,6 +37,7 @@ public class SettingsDialogFragment extends DialogFragment {
     private AppCompatSpinner mSpWhiteBalance;
     private AppCompatSpinner mSpSceneMode;
     private AppCompatSpinner mSpFPS;
+    private AppCompatSpinner mSpISOMode;
     private AppCompatSeekBar mSbZoom;
 
     @Override
@@ -107,6 +108,12 @@ public class SettingsDialogFragment extends DialogFragment {
             @Override
             public void set(String key) {
                 mCameraController.setFocusMode(key);
+            }
+        });
+        initSpinner(mSpISOMode,mCameraController.getSupportedModes("iso-values") , "iso", new Callback() {
+            @Override
+            public void set(String key) {
+                mCameraController.setMode("iso",key);
             }
         });
 
@@ -199,6 +206,7 @@ public class SettingsDialogFragment extends DialogFragment {
         mSpFocus = view.findViewById(R.id.spFocus);
         mSpWhiteBalance = view.findViewById(R.id.spWhiteBalance);
         mSpSceneMode = view.findViewById(R.id.spSceneMode);
+        mSpISOMode = view.findViewById(R.id.spISOMode);
         mSbZoom = view.findViewById(R.id.sbZoom);
         mSpFPS = view.findViewById(R.id.spFPS);
     }

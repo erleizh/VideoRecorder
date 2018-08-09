@@ -1,6 +1,7 @@
 package com.erlei.videorecorder.camera;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
@@ -12,6 +13,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
@@ -32,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 
 import static android.view.Surface.ROTATION_270;
@@ -44,7 +47,8 @@ import static android.view.Surface.ROTATION_90;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class Camera {
-
+    private static final String S_CAMERA_SUPPORTED_MODES = "camera_supported_modes";
+    private final SparseArray<HashMap<String, String>> mSupportedModes = new SparseArray<>();
     /**
      * android.hardware.Camera#getNumberOfCameras() == 0
      */
@@ -808,6 +812,100 @@ public class Camera {
 
     public boolean isOpen() {
         return mOpened;
+    }
+
+    public List<String> getSupportedModes(String... modes) {
+        if (mCamera == null) return null;
+        int cameraId = getCameraId();
+        if (cameraId == -1) return new ArrayList<>();
+        ArrayList<String> supportedModes = getMemoryCachedSupportedModes(cameraId, modes);
+        if (supportedModes == null) {
+            //内存没取到 ，从 SharedPreferences 取
+            supportedModes = getFileCachedSupportedModes(cameraId, modes);
+            if (supportedModes == null) {
+                //文件没取到 ， 从Camera取
+                supportedModes = getSupportedModesFromCamera(modes);
+            }
+        }
+        return supportedModes;
+    }
+
+
+    private ArrayList<String> getSupportedModesFromCamera(String... modes) {
+        android.hardware.Camera.Parameters cameraParameters = getCameraParameters();
+        if (cameraParameters == null) return null;
+        String flatten = cameraParameters.flatten();
+        int cameraId = getCameraId();
+        unFlatten(cameraId, flatten);
+        SharedPreferences preferences = mContext.getSharedPreferences(S_CAMERA_SUPPORTED_MODES, Context.MODE_PRIVATE);
+        preferences.edit().putString(S_CAMERA_SUPPORTED_MODES + cameraId, flatten).apply();
+        return getMemoryCachedSupportedModes(cameraId, modes);
+    }
+
+    private ArrayList<String> getFileCachedSupportedModes(int cameraId, String... modes) {
+        SharedPreferences preferences = mContext.getSharedPreferences(S_CAMERA_SUPPORTED_MODES, Context.MODE_PRIVATE);
+        String flatten = preferences.getString(S_CAMERA_SUPPORTED_MODES + cameraId, "");
+        if (!TextUtils.isEmpty(flatten)) {
+            unFlatten(cameraId, flatten);
+            return getMemoryCachedSupportedModes(cameraId, modes);
+        } else {
+            return null;
+        }
+    }
+
+    private void unFlatten(int cameraId, String flatten) {
+        TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(';');
+        splitter.setString(flatten);
+        HashMap<String, String> map = new HashMap<>();
+        for (String kv : splitter) {
+            int pos = kv.indexOf('=');
+            if (pos == -1) continue;
+            String k = kv.substring(0, pos);
+            String v = kv.substring(pos + 1);
+            map.put(k, v);
+        }
+        mSupportedModes.put(cameraId, map);
+    }
+
+    public ArrayList<String> getMemoryCachedSupportedModes(int cameraId, String... modes) {
+        if (mSupportedModes.size() > 0) {
+            ArrayList<String> supportedModes = new ArrayList<>();
+            //缓存有数据
+            HashMap<String, String> map = mSupportedModes.get(cameraId);
+            for (String mode : modes) {
+                String value = map.get(mode);
+                if (!TextUtils.isEmpty(value)) supportedModes.addAll(split(value));
+            }
+            return supportedModes;
+        } else {
+            return null;
+        }
+
+    }
+
+    private ArrayList<String> split(String str) {
+        if (str == null) return null;
+
+        TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+        splitter.setString(str);
+        ArrayList<String> substrings = new ArrayList<String>();
+        for (String s : splitter) {
+            substrings.add(s);
+        }
+        return substrings;
+    }
+
+    public int getCameraId() {
+        if (mCamera == null) return -1;
+        return mCameraId;
+    }
+
+    public void setMode(String key, String value) {
+        if (mCamera == null) return;
+        android.hardware.Camera.Parameters parameters = mCamera.getParameters();
+        if (parameters == null) return;
+        parameters.set(key, value);
+        mCamera.setParameters(parameters);
     }
 
     @SuppressWarnings("unused")

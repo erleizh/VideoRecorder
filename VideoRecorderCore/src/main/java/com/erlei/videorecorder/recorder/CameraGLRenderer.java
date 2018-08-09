@@ -29,12 +29,13 @@ import static com.erlei.videorecorder.gles.GLUtil.checkLocation;
  * 3 . mTexDraw[0]  2d 纹理,
  * <p>
  * 创建了一个帧缓冲 mFBO[0] , CameraGlView 有 getCameraTextureCallback 会使用这个fbo
- * 先将相机纹理数据绘制到这个帧缓冲区里面 ,然后调用 modify
+ * 先将相机纹理数据绘制到这个帧缓冲区里面 ,然后调用 drawTexture
  * 会传递两个纹理id , 回调方法需要将修改后的纹理数据从 mTexFBO[0] 转到 mTexDraw[0]
  * 根据回调方法的返回值决定将mTexFBO[0] 或 mTexDraw[0] 纹理的数据绘制到屏幕
  * <p>
  */
 class CameraGLRenderer {
+    private static final String TAG = "CameraGLRenderer";
 
     private static final String sVertexShader = ""
             + "uniform mat4 uMVPMatrix;\n"
@@ -68,11 +69,13 @@ class CameraGLRenderer {
     private int mProgramOES, mProgram2D;
     private int aPosOES, aTexCoordOES, vPos2D, vTexCoord2D, uMVPMatrixOES, uTexMatrixOES, uMVPMatrix2D, uTexMatrix2D, uTextureOES, uTexture2D;
     private int mFBOWidth, mFBOHeight;
-    private int[] mTexCamera = {0}, mTexFBO = {0}, mTexDraw = {0}, mFBO = {0};
+    private int[] mTexCamera = {0}, mTexFBO = {0},/* mTexDraw = {0},*/
+            mFBO = {0};
     private SurfaceTexture mTexture;
     private float[] mMVPMatrixOES, mTexMatrixOES, mMVPMatrix2D = new float[16], mTexMatrix2D = new float[16];
     private Size mSurfaceSize;
     private CameraController mCameraController;
+    private OnDrawTextureListener mDrawTextureListener;
 
     public CameraGLRenderer(CameraController cameraController) {
         this(cameraController, null);
@@ -141,24 +144,38 @@ class CameraGLRenderer {
     }
 
 
+    private long mLastDrawTime;
+
     public void onDrawFrame() {
         if (mTexture == null) return;
         synchronized (this) {
             mTexture.updateTexImage();
+            mTexture.getTransformMatrix(mTexMatrixOES);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-            CameraController.CameraTextureCallback callback = mCameraController.getCameraTextureCallBack();
-            if (callback != null) {
+            if (mDrawTextureListener != null) {
                 // texCamera(OES) -> texFBO
+                if (LogUtil.LOG_ENABLE) mLastDrawTime = System.nanoTime();
                 drawTexture(mTexCamera[0], true, mFBO[0]);
-
+                if (LogUtil.LOG_ENABLE)
+                    LogUtil.logd(TAG, "drawTexture -> texFBO = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 // call user code (texFBO -> texDraw)
-                if (callback.modify(mTexFBO[0], mTexDraw[0])) {
+                if (LogUtil.LOG_ENABLE) mLastDrawTime = System.nanoTime();
+                int drawTexture = mDrawTextureListener.onDrawTexture(mFBO[0], mTexFBO[0]);
+                if (LogUtil.LOG_ENABLE)
+                    LogUtil.logd(TAG, "onDrawTexture = " + drawTexture + " = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
+                if (drawTexture <= 0) {
+                    mLastDrawTime = System.nanoTime();
                     // texDraw -> screen
-                    drawTexture(mTexDraw[0], false, 0);
+                    drawTexture(drawTexture, false, 0);
+                    if (LogUtil.LOG_ENABLE)
+                        LogUtil.logd(TAG, "drawTexture -> screen = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 } else {
+                    mLastDrawTime = System.nanoTime();
                     // texFBO -> screen
                     drawTexture(mTexFBO[0], false, 0);
+                    if (LogUtil.LOG_ENABLE)
+                        LogUtil.logd(TAG, "drawTexture -> screen = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 }
             } else {
                 // texCamera(OES) -> screen
@@ -191,7 +208,6 @@ class CameraGLRenderer {
             GLES20.glUniformMatrix4fv(uMVPMatrixOES, 1, false, mMVPMatrixOES, 0);
             checkGlError("glUniformMatrix4fv");
             // Copy the texture transformation matrix over.
-            mTexture.getTransformMatrix(mTexMatrixOES);
             GLES20.glUniformMatrix4fv(uTexMatrixOES, 1, false, mTexMatrixOES, 0);
             checkGlError("glUniformMatrix4fv");
 
@@ -219,11 +235,9 @@ class CameraGLRenderer {
         }
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        GLES20.glFlush();
         checkGlError("glDrawArrays");
         GLES20.glUseProgram(0);
     }
-
 
 
     protected void destroy() {
@@ -231,10 +245,6 @@ class CameraGLRenderer {
             LogUtil.logd("stopPreview");
             deleteSurfaceTexture();
             deleteFBO();
-        }
-        CameraController.CameraTextureCallback callback = mCameraController.getCameraTextureCallBack();
-        if (callback != null) {
-            callback.onCameraViewStopped();
         }
     }
 
@@ -244,7 +254,7 @@ class CameraGLRenderer {
         GLES20.glDeleteFramebuffers(1, mFBO, 0);
 
         deleteTex(mTexFBO);
-        deleteTex(mTexDraw);
+//        deleteTex(mTexDraw);
         mFBOWidth = mFBOHeight = 0;
     }
 
@@ -253,13 +263,13 @@ class CameraGLRenderer {
 
         deleteFBO();
 
-        GLES20.glGenTextures(1, mTexDraw, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexDraw[0]);
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+//        GLES20.glGenTextures(1, mTexDraw, 0);
+//        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexDraw[0]);
+//        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
         GLES20.glGenTextures(1, mTexFBO, 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexFBO[0]);
@@ -273,7 +283,7 @@ class CameraGLRenderer {
         GLES20.glGenFramebuffers(1, mFBO, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBO[0]);
         GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, mTexFBO[0], 0);
-        LogUtil.logd("initFBO error status: " + GLES20.glGetError());
+        LogUtil.logd("initFBO status: " + GLES20.glGetError());
 
         int FBOstatus = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
         if (FBOstatus != GLES20.GL_FRAMEBUFFER_COMPLETE) {
@@ -424,4 +434,7 @@ class CameraGLRenderer {
         return program;
     }
 
+    public void setOnDrawTextureListener(OnDrawTextureListener drawTextureListener) {
+        mDrawTextureListener = drawTextureListener;
+    }
 }

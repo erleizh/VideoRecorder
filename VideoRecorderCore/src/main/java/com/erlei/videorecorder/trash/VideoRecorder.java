@@ -5,8 +5,8 @@ import android.opengl.GLES30;
 import android.os.AsyncTask;
 
 import com.erlei.videorecorder.camera.Size;
+import com.erlei.videorecorder.recorder.OnDrawTextureListener;
 import com.erlei.videorecorder.util.LogUtil;
-import com.erlei.videorecorder.widget.CameraGLView;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -21,10 +21,9 @@ import static com.erlei.videorecorder.gles.GLUtil.checkGlError;
 /**
  * pbo 异步 glReadPixels , 不成功
  */
-class VideoRecorder implements CameraGLView.CameraTextureCallback {
+class VideoRecorder  {
 
 
-    private final CameraGLView mCameraGLView;
     private IntBuffer mPboIds;
     private static final int PBO_NUM = 2;
     private int mPboSize = 0;
@@ -33,11 +32,6 @@ class VideoRecorder implements CameraGLView.CameraTextureCallback {
     private Buffer mBuffer;
     private Size mSize;
 
-
-    public VideoRecorder(CameraGLView cameraGLView) {
-        mCameraGLView = cameraGLView;
-        mCameraGLView.setCameraTextureCallBack(this);
-    }
 
     private int mRowStride;
 
@@ -61,14 +55,12 @@ class VideoRecorder implements CameraGLView.CameraTextureCallback {
         mBuffer = ByteBuffer.allocate(mPboSize).position(0);
     }
 
-    @Override
     public void onCameraViewStarted(Size size) {
         mSize = size;
         LogUtil.loge("onCameraViewStarted size = "+ size);
         initPixelBuffer(size);
     }
 
-    @Override
     public void onCameraViewStopped() {
         LogUtil.loge("onCameraViewStopped");
         destroyPixelBuffers();
@@ -76,7 +68,7 @@ class VideoRecorder implements CameraGLView.CameraTextureCallback {
 
 //    //
 //    @Override
-//    public boolean modify(int texIn, int texOut, Size size) {
+//    public boolean drawTexture(int texIn, int texOut, Size size) {
 //        long l = System.currentTimeMillis();
 //        GLES30.glBindBuffer(GLES30.GL_PIXEL_PACK_BUFFER, mPboIds.get(0));
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -96,8 +88,7 @@ class VideoRecorder implements CameraGLView.CameraTextureCallback {
     long num_downloads;
     int index;
 
-    @Override
-    public boolean modify(int i, int i1) {
+    public boolean drawTexture(int i, int i1) {
 //        GLES30.glPixelStorei(GLES30.GL_PACK_ALIGNMENT, 4);
 //        long l = System.currentTimeMillis();
 //        if (num_downloads < PBO_NUM) {
@@ -136,8 +127,8 @@ class VideoRecorder implements CameraGLView.CameraTextureCallback {
     int count = 1;
 //
 //    @Override
-//    public boolean modify(int texIn, int texOut, Size size) {
-//        LogUtil.loge("modify");
+//    public boolean drawTexture(int texIn, int texOut, Size size) {
+//        LogUtil.loge("drawTexture");
 //        LogUtil.loge("count : " + count++);
 ////        if (count < 60) return false;
 //        long l = System.currentTimeMillis();

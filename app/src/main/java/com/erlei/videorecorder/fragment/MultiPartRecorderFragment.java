@@ -3,6 +3,9 @@ package com.erlei.videorecorder.fragment;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -28,12 +31,15 @@ import com.erlei.videorecorder.BuildConfig;
 import com.erlei.videorecorder.R;
 import com.erlei.videorecorder.camera.Camera;
 import com.erlei.videorecorder.camera.Size;
+import com.erlei.videorecorder.effects.CanvasOverlayEffect;
+import com.erlei.videorecorder.effects.EffectsManager;
 import com.erlei.videorecorder.recorder.CameraController;
 import com.erlei.videorecorder.recorder.DefaultCameraPreview;
 import com.erlei.videorecorder.recorder.ICameraPreview;
 import com.erlei.videorecorder.recorder.IVideoRecorder;
 import com.erlei.videorecorder.recorder.VideoRecorder;
 import com.erlei.videorecorder.recorder.VideoRecorderHandler;
+import com.erlei.videorecorder.util.FPSCounterFactory;
 import com.erlei.videorecorder.util.LogUtil;
 import com.erlei.videorecorder.util.RecordGestureDetector;
 
@@ -49,6 +55,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
     private TextView mTvFps;
     private MultiPartRecorderView mRecorderIndicator;
     private CameraController mCameraController;
+    private EffectsManager mEffectsManager;
 
 
     public static MultiPartRecorderFragment newInstance() {
@@ -109,28 +116,27 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
         });
 
         mBtnRecord.setOnTouchListener(new View.OnTouchListener() {
-            private View mView;
             private final RecordGestureDetector mGestureDetector = new RecordGestureDetector(new RecordGestureDetector.SimpleOnGestureListener() {
                 private static final String TAG = "TouchGestureDetector";
 
                 @Override
-                public void onLongPressDown(MotionEvent e) {
+                public void onLongPressDown(View view, MotionEvent e) {
                     LogUtil.logd(TAG, "onLongPressDown");
-                    mView.animate().scaleX(0.8f).scaleY(0.8f).setDuration(200).start();
-                    mView.setSelected(true);
+                    view.animate().scaleX(0.8f).scaleY(0.8f).setDuration(200).start();
+                    view.setSelected(true);
                     startRecord();
                 }
 
                 @Override
-                public void onLongPressUp(MotionEvent e) {
-                    mView.animate().scaleX(1f).scaleY(1f).setDuration(200).start();
-                    mView.setSelected(false);
+                public void onLongPressUp(View view, MotionEvent e) {
+                    view.animate().scaleX(1f).scaleY(1f).setDuration(200).start();
+                    view.setSelected(false);
                     stopRecord();
                     LogUtil.logd(TAG, "onLongPressUp");
                 }
 
                 @Override
-                public void onSingleTap(MotionEvent e) {
+                public void onSingleTap(View view, MotionEvent e) {
                     LogUtil.logd(TAG, "onSingleTap " + System.currentTimeMillis());
                     mRecorder.takePicture(new IVideoRecorder.TakePictureCallback() {
                         @Override
@@ -155,8 +161,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                mView = v;
-                return mGestureDetector.onTouchEvent(event);
+                return mGestureDetector.onTouchEvent(v, event);
             }
         });
         view.findViewById(R.id.btnNext).setOnClickListener(new View.OnClickListener() {
@@ -298,14 +303,40 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
 
         Camera.CameraBuilder cameraBuilder = new Camera.CameraBuilder(getActivity())
                 .useDefaultConfig()
+                .setFacing(android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT)
                 .setPreviewSize(new Size(2048, 1536))
                 .setRecordingHint(true)
                 .setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+
+        mEffectsManager = new EffectsManager();
+        mEffectsManager.addEffect(new CanvasOverlayEffect() {
+            private FPSCounterFactory.FPSCounter1 mCounter;
+            Paint mPaint;
+
+            @Override
+            public void prepare(Size size) {
+                super.prepare(size);
+                mPaint = new Paint();
+                mPaint.setColor(Color.YELLOW);
+                mPaint.setAlpha(230);
+                mPaint.setTextSize(40);
+                mPaint.setStyle(Paint.Style.FILL);
+                mPaint.setAntiAlias(true);
+
+                mCounter = new FPSCounterFactory.FPSCounter1();
+            }
+
+            @Override
+            protected void drawCanvas(Canvas canvas) {
+                canvas.drawText(String.format(Locale.getDefault(), "%.2f", mCounter.getFPS()), canvas.getWidth() / 2, canvas.getHeight() / 2, mPaint);
+            }
+        });
 
         VideoRecorder.Builder builder = new VideoRecorder.Builder(cameraPreview)
                 .setCallbackHandler(new CallbackHandler())
                 .setLogFPSEnable(false)
                 .setCameraBuilder(cameraBuilder)
+                .setDrawTextureListener(mEffectsManager)
                 .setOutPutPath(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), File.separator + "VideoRecorder").getAbsolutePath())
                 .setFrameRate(30)
                 .setChannelCount(1);
@@ -315,12 +346,12 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 .addPartListener(new MultiPartRecorder.VideoPartListener() {
                     @Override
                     public void onRecordVideoPartStarted(MultiPartRecorder.Part part) {
-//                LogUtil.logd("onRecordVideoPartStarted \t" + part.toString());
+                        LogUtil.logd("onRecordVideoPartStarted \t" + part.toString());
                     }
 
                     @Override
                     public void onRecordVideoPartSuccess(MultiPartRecorder.Part part) {
-//                LogUtil.logd("onRecordVideoPartSuccess \t" + part.toString());
+                        LogUtil.logd("onRecordVideoPartSuccess \t" + part.toString());
                     }
 
                     @Override
@@ -392,8 +423,6 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
         mCameraController.closeCamera();
         mCameraController.openCamera(mRecorder.getPreviewTexture());
         mRecorder.onSizeChanged(surfaceSize.getWidth(), surfaceSize.getHeight());
-
-
     }
 
     // TODO: 2018/6/26 暂时让他泄露吧~

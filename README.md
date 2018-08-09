@@ -7,9 +7,16 @@
 
 - [X] 离屏录制
 
+- [X] 录制时的Canvas API支持
+
 - [ ] 实时滤镜
 
 - [ ] 后期滤镜
+
+#### ScreenShort
+   <div align="center">
+   <img src="/screenshort/479649274876459714.jpg" width="45%"><img src="/screenshort/440800708950629658.png" width="45%">
+   </div>
 
 
 #### Download apk

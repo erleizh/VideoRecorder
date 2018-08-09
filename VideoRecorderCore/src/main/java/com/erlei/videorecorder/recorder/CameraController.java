@@ -32,38 +32,10 @@ public interface CameraController {
 
     void setZoomOnTouch(MotionEvent event);
 
-    interface CameraTextureCallback {
-        /**
-         * @param size -  the size of the frame
-         */
-        void onCameraViewStarted(Size size);
-
-        /**
-         * This method is invoked when camera preview has been stopped for some reason.
-         * No frames will be delivered via onCameraFrame() callback after this method is called.
-         */
-        void onCameraViewStopped();
-
-        /**
-         * This method is invoked when a new preview frame from Camera is ready.
-         * <p>
-         * <p>
-         * This method is invoked when camera preview has started. After this method is invoked
-         * the frames will startRecord to be delivered to client via the onCameraFrame() callback.
-         *
-         * @param texIn  -  the OpenGL texture ID that contains frame in RGBA format
-         * @param texOut - the OpenGL texture ID that can be used to store modified frame image t display
-         * @return `true` if `texOut` should be displayed, `false` - to show `texIn`
-         */
-        boolean modify(int texIn, int texOut);
-    }
-
     /**
      * @return 相机是否打开
      */
     boolean isOpen();
-
-    CameraTextureCallback getCameraTextureCallBack();
 
     int getCameraOrientation();
 
@@ -235,4 +207,18 @@ public interface CameraController {
      */
     void toggleFacing();
 
+    /**
+     * 获取相机支持的模式,相机打开之后才能调用
+     *
+     * @param modes    modes
+     */
+    List<String> getSupportedModes(String... modes);
+
+
+    /**
+     * 设置模式
+     * @param key key
+     * @param value value
+     */
+    void setMode(String key, String value);
 }

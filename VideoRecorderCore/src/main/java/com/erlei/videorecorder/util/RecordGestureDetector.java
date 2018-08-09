@@ -4,6 +4,7 @@ package com.erlei.videorecorder.util;
 import android.os.Handler;
 import android.os.Message;
 import android.view.MotionEvent;
+import android.view.View;
 
 import java.lang.ref.WeakReference;
 
@@ -21,11 +22,11 @@ public class RecordGestureDetector {
 
     public interface OnGestureListener {
 
-        void onLongPressDown(MotionEvent e);
+        void onLongPressDown(View view, MotionEvent e);
 
-        void onLongPressUp(MotionEvent e);
+        void onLongPressUp(View view, MotionEvent e);
 
-        void onSingleTap(MotionEvent e);
+        void onSingleTap(View view, MotionEvent e);
 
     }
 
@@ -33,17 +34,17 @@ public class RecordGestureDetector {
     public static class SimpleOnGestureListener implements RecordGestureDetector.OnGestureListener {
 
         @Override
-        public void onLongPressDown(MotionEvent e) {
+        public void onLongPressDown(View view, MotionEvent e) {
 
         }
 
         @Override
-        public void onLongPressUp(MotionEvent e) {
+        public void onLongPressUp(View view, MotionEvent e) {
 
         }
 
         @Override
-        public void onSingleTap(MotionEvent e) {
+        public void onSingleTap(View view, MotionEvent e) {
 
         }
     }
@@ -67,7 +68,7 @@ public class RecordGestureDetector {
             switch (msg.what) {
                 case LONG_PRESS:
                     if (mWeakReference.get() != null) {
-                        mWeakReference.get().dispatchLongPress();
+                        mWeakReference.get().dispatchLongPress((View) msg.obj);
                     }
                     break;
                 default:
@@ -95,20 +96,20 @@ public class RecordGestureDetector {
     }
 
 
-    public boolean onTouchEvent(MotionEvent ev) {
+    public boolean onTouchEvent(View v, MotionEvent ev) {
         final int action = ev.getAction();
         switch (action & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
                 mCurrentDownEvent = MotionEvent.obtain(ev);
                 mHandler.removeMessages(LONG_PRESS);
-                mHandler.sendEmptyMessageAtTime(LONG_PRESS, mCurrentDownEvent.getDownTime() + LONG_PRESS_TIMEOUT);
+                mHandler.sendMessageAtTime(Message.obtain(mHandler, LONG_PRESS, v), mCurrentDownEvent.getDownTime() + LONG_PRESS_TIMEOUT);
                 break;
             case MotionEvent.ACTION_UP:
                 if (mInLongPress) {
                     mInLongPress = false;
-                    mListener.onLongPressUp(ev);
+                    mListener.onLongPressUp(v, ev);
                 } else {
-                    mListener.onSingleTap(ev);
+                    mListener.onSingleTap(v, ev);
                 }
                 mHandler.removeMessages(LONG_PRESS);
                 break;
@@ -124,8 +125,8 @@ public class RecordGestureDetector {
     }
 
 
-    private void dispatchLongPress() {
+    private void dispatchLongPress(View view) {
         mInLongPress = true;
-        mListener.onLongPressDown(mCurrentDownEvent);
+        mListener.onLongPressDown(view, mCurrentDownEvent);
     }
 }

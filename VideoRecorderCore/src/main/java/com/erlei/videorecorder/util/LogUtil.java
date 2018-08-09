@@ -11,7 +11,7 @@ public class LogUtil {
     }
 
     public static void logd(String tag, String msg) {
-        if (LOG_ENABLE) Log.d(tag, msg);
+        if (LOG_ENABLE) Log.d(TAG + "-" + tag, msg);
     }
 
     public static void loge(String msg) {
@@ -19,7 +19,7 @@ public class LogUtil {
     }
 
     public static void loge(String tag, String msg) {
-        Log.e(tag, msg);
+        Log.e(TAG + "-" + tag, msg);
     }
 
     public static void logi(String msg) {
@@ -27,7 +27,7 @@ public class LogUtil {
     }
 
     public static void logi(String tag, String msg) {
-        Log.i(tag, msg);
+        Log.i(TAG + "-" + tag, msg);
     }
 
     public static void logw(String msg) {
@@ -35,6 +35,6 @@ public class LogUtil {
     }
 
     public static void logw(String tag, String msg) {
-        Log.w(tag, msg);
+        Log.w(TAG + "-" + tag, msg);
     }
 }

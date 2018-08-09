@@ -3,6 +3,9 @@ package com.erlei.videorecorder.fragment;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -28,14 +31,15 @@ import com.erlei.videorecorder.BuildConfig;
 import com.erlei.videorecorder.R;
 import com.erlei.videorecorder.camera.Camera;
 import com.erlei.videorecorder.camera.Size;
+import com.erlei.videorecorder.effects.CanvasOverlayEffect;
 import com.erlei.videorecorder.effects.EffectsManager;
-import com.erlei.videorecorder.effects.TextOverlayEffect;
 import com.erlei.videorecorder.recorder.CameraController;
 import com.erlei.videorecorder.recorder.DefaultCameraPreview;
 import com.erlei.videorecorder.recorder.ICameraPreview;
 import com.erlei.videorecorder.recorder.IVideoRecorder;
 import com.erlei.videorecorder.recorder.VideoRecorder;
 import com.erlei.videorecorder.recorder.VideoRecorderHandler;
+import com.erlei.videorecorder.util.FPSCounterFactory;
 import com.erlei.videorecorder.util.LogUtil;
 import com.erlei.videorecorder.util.RecordGestureDetector;
 
@@ -305,7 +309,28 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 .setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
 
         mEffectsManager = new EffectsManager();
-        mEffectsManager.addEffect(new TextOverlayEffect());
+        mEffectsManager.addEffect(new CanvasOverlayEffect() {
+            private FPSCounterFactory.FPSCounter1 mCounter;
+            Paint mPaint;
+
+            @Override
+            public void prepare(Size size) {
+                super.prepare(size);
+                mPaint = new Paint();
+                mPaint.setColor(Color.YELLOW);
+                mPaint.setAlpha(230);
+                mPaint.setTextSize(40);
+                mPaint.setStyle(Paint.Style.FILL);
+                mPaint.setAntiAlias(true);
+
+                mCounter = new FPSCounterFactory.FPSCounter1();
+            }
+
+            @Override
+            protected void drawCanvas(Canvas canvas) {
+                canvas.drawText(String.format(Locale.getDefault(), "%.2f", mCounter.getFPS()), canvas.getWidth() / 2, canvas.getHeight() / 2, mPaint);
+            }
+        });
 
         VideoRecorder.Builder builder = new VideoRecorder.Builder(cameraPreview)
                 .setCallbackHandler(new CallbackHandler())

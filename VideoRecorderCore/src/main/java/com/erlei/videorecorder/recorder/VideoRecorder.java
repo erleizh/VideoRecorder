@@ -15,6 +15,8 @@ import com.erlei.videorecorder.encoder1.MediaAudioEncoder;
 import com.erlei.videorecorder.encoder1.MediaMuxerWrapper;
 import com.erlei.videorecorder.encoder1.MediaVideoEncoder;
 import com.erlei.videorecorder.gles.EglCore;
+import com.erlei.videorecorder.gles.EglSurfaceBase;
+import com.erlei.videorecorder.gles.GLUtil;
 import com.erlei.videorecorder.gles.WindowSurface;
 import com.erlei.videorecorder.util.LogUtil;
 import com.erlei.videorecorder.util.SaveFrameTask;
@@ -238,18 +240,60 @@ public class VideoRecorder implements RenderThread.RenderCallBack, IVideoRecorde
     @Override
     public void onPrepared(EglCore eglCore) {
         mConfig.cameraController.openCamera(getPreviewTexture());
+        LogUtil.logd(TAG, "GL_VERSION " + GLUtil.GL_VERSION + (GLUtil.GL_VERSION < 3 ? "draw twice" : "glBlitFramebuffer"));
     }
 
+    /**
+     * 渲染一帧
+     *
+     * @param renderer
+     * @param windowSurface
+     * @return swapBuffers
+     */
     @Override
-    public synchronized void onDrawFrame(CameraGLRenderer renderer) {
+    public synchronized boolean onDrawFrame(CameraGLRenderer renderer, EglSurfaceBase windowSurface) {
+        boolean swapBuffers;
+        long startTime = System.currentTimeMillis();
         //使用mSync同步锁将导致录制开始的时候卡顿一下
 //        && !mRequestStart && !mRequestStop
         if (mInputWindowSurface != null && mVideoEncoder != null && mRecordEnabled && mMuxerRunning && mPreviewState) {
-            mInputWindowSurface.makeCurrent();
-            mVideoEncoder.frameAvailableSoon();
+            if (GLUtil.GL_VERSION >= 3) {
+
+                windowSurface.makeCurrent();
+                renderer.onDrawFrame();
+                mInputWindowSurface.makeCurrentReadFrom(windowSurface);
+                mVideoEncoder.frameAvailableSoon();
+                GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+                GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+                GLUtil.checkGlError("before glBlitFramebuffer");
+                GLES30.glBlitFramebuffer(
+                        0, 0, windowSurface.getWidth(), windowSurface.getHeight(),
+                        0, 0, windowSurface.getWidth(), windowSurface.getHeight(),
+                        GLES30.GL_COLOR_BUFFER_BIT, GLES30.GL_NEAREST);
+
+                int err;
+                if ((err = GLES30.glGetError()) != GLES30.GL_NO_ERROR) {
+                    LogUtil.logw("ERROR: glBlitFramebuffer failed: 0x" + Integer.toHexString(err));
+                }
+                mInputWindowSurface.swapBuffers();
+                windowSurface.makeCurrent();
+                swapBuffers = windowSurface.swapBuffers();
+            } else {
+                windowSurface.makeCurrent();
+                renderer.onDrawFrame();
+                swapBuffers = windowSurface.swapBuffers();
+
+                mInputWindowSurface.makeCurrent();
+                mVideoEncoder.frameAvailableSoon();
+                renderer.onDrawFrame();
+                mInputWindowSurface.swapBuffers();
+            }
+        } else {
+            windowSurface.makeCurrent();
             renderer.onDrawFrame();
-            mInputWindowSurface.swapBuffers();
+            swapBuffers = windowSurface.swapBuffers();
         }
+        LogUtil.logv("onDrawFrame ----> " + (System.currentTimeMillis() - startTime) + "ms");
 
         if (mByteBuffer != null && mTakePicture) {
             mByteBuffer.rewind();
@@ -259,7 +303,9 @@ public class VideoRecorder implements RenderThread.RenderCallBack, IVideoRecorde
             mPictureCallback = null;
             mByteBuffer = null;
         }
+        return swapBuffers;
     }
+
 
     @Override
     public void onStopped() {

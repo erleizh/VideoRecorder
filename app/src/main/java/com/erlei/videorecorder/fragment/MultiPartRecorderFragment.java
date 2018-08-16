@@ -299,7 +299,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
 
     private void initRecorder() {
         ICameraPreview cameraPreview = new DefaultCameraPreview(mTextureView);
-//        ICameraPreview cameraPreview = new OffscreenCameraPreview(getContext(), 1920, 1920);
+//        ICameraPreview cameraPreview = new OffscreenCameraPreview(getContext(), 1920, 1920); //离屏录制
 
         Camera.CameraBuilder cameraBuilder = new Camera.CameraBuilder(getActivity())
                 .useDefaultConfig()
@@ -308,6 +308,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 .setRecordingHint(true)
                 .setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
 
+        //视频效果管理器
         mEffectsManager = new EffectsManager();
         mEffectsManager.addEffect(new CanvasOverlayEffect() {
             private FPSCounterFactory.FPSCounter1 mCounter;
@@ -341,6 +342,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 .setFrameRate(30)
                 .setChannelCount(1);
 
+        //分段录制,回删支持
         MultiPartRecorder.Builder multiBuilder = new MultiPartRecorder.Builder(builder);
         mRecorder = multiBuilder
                 .addPartListener(new MultiPartRecorder.VideoPartListener() {

@@ -105,19 +105,25 @@ public class RenderThread extends HandlerThread implements SurfaceTexture.OnFram
 
     private void onDestroy() {
         LogUtil.logd(TAG, "onDestroy");
-        quitSafely();
+        quit();
     }
 
     private void onDrawFrame(long timestamp) {
-        mWindowSurface.makeCurrent();
-        mRenderer.onDrawFrame();
-        boolean swapBuffers = mWindowSurface.swapBuffers();
-        if (mCallBack != null) mCallBack.onDrawFrame(mRenderer);
+        boolean swapBuffers;
+        if (mCallBack != null) {
+            swapBuffers = mCallBack.onDrawFrame(mRenderer, mWindowSurface);
+        } else {
+            mWindowSurface.makeCurrent();
+            mRenderer.onDrawFrame();
+            swapBuffers = mWindowSurface.swapBuffers();
+        }
         if (!swapBuffers) {
             //如果活动停止而没有等待我们停止，就会发生这种情况。
             LogUtil.loge(TAG, "swapBuffers failed, killing renderer thread");
             onDestroy();
         }
+
+
         if (mConfig.viewHandler != null || mConfig.logFPS) {
             float fps = mFPSCounter.getFPS();
             if (mConfig.logFPS) LogUtil.logd(TAG, "FPS = " + fps);
@@ -217,8 +223,10 @@ public class RenderThread extends HandlerThread implements SurfaceTexture.OnFram
 
         /**
          * 渲染一帧
+         *
+         * @return swapBuffers
          */
-        void onDrawFrame(CameraGLRenderer renderer);
+        boolean onDrawFrame(CameraGLRenderer renderer, EglSurfaceBase windowSurface);
 
         /**
          * 渲染线程停止

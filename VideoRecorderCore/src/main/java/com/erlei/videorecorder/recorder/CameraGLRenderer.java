@@ -158,24 +158,24 @@ class CameraGLRenderer {
                 if (LogUtil.LOG_ENABLE) mLastDrawTime = System.nanoTime();
                 drawTexture(mTexCamera[0], true, mFBO[0]);
                 if (LogUtil.LOG_ENABLE)
-                    LogUtil.logd(TAG, "drawTexture -> texFBO = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
+                    LogUtil.logv(TAG, "drawTexture -> texFBO = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 // call user code (texFBO -> texDraw)
                 if (LogUtil.LOG_ENABLE) mLastDrawTime = System.nanoTime();
                 int drawTexture = mDrawTextureListener.onDrawTexture(mFBO[0], mTexFBO[0]);
                 if (LogUtil.LOG_ENABLE)
-                    LogUtil.logd(TAG, "onDrawTexture = " + drawTexture + " = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
+                    LogUtil.logv(TAG, "onDrawTexture = " + drawTexture + " = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 if (drawTexture <= 0) {
                     mLastDrawTime = System.nanoTime();
                     // texDraw -> screen
                     drawTexture(drawTexture, false, 0);
                     if (LogUtil.LOG_ENABLE)
-                        LogUtil.logd(TAG, "drawTexture -> screen = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
+                        LogUtil.logv(TAG, "drawTexture -> screen = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 } else {
                     mLastDrawTime = System.nanoTime();
                     // texFBO -> screen
                     drawTexture(mTexFBO[0], false, 0);
                     if (LogUtil.LOG_ENABLE)
-                        LogUtil.logd(TAG, "drawTexture -> screen = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
+                        LogUtil.logv(TAG, "drawTexture -> screen = \t\t\t\t" + ((System.nanoTime() - mLastDrawTime) / 1000) + "μs");
                 }
             } else {
                 // texCamera(OES) -> screen

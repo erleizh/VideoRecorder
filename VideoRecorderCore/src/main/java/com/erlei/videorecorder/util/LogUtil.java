@@ -37,4 +37,13 @@ public class LogUtil {
     public static void logw(String tag, String msg) {
         Log.w(TAG + "-" + tag, msg);
     }
+
+    public static void logv(String msg) {
+        Log.v(TAG, msg);
+    }
+
+    public static void logv(String tag, String msg) {
+        Log.v(TAG + "-" + tag, msg);
+    }
+
 }

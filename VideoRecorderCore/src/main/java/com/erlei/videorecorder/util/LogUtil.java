@@ -3,6 +3,11 @@ package com.erlei.videorecorder.util;
 import android.util.Log;
 
 public class LogUtil {
+    public static final int LOG_NONE = 0;
+    public static final int LOG_DEBUG = 3;
+    public static final int LOG_INFO = 2;
+    public static final int LOG_ERROR = 1;
+
     public static String TAG = Config.TAG;
     public static final boolean LOG_ENABLE = Config.DEBUG;
 

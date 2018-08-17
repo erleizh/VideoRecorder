@@ -19,6 +19,8 @@ public class GLUtil {
     private static final int SIZEOF_FLOAT = 4;
     /** Identity matrix for general use.  Don't modify or life will get weird. */
     public static final float[] IDENTITY_MATRIX;
+    public static int GL_VERSION = -1;
+
     static {
         IDENTITY_MATRIX = new float[16];
         Matrix.setIdentityM(IDENTITY_MATRIX, 0);
@@ -196,4 +198,14 @@ public class GLUtil {
             int type,
             int offset
     );
+
+    // TODO: 2018/8/17  
+    public static int glGenTexture() {
+        return 0;
+    }
+
+    // TODO: 2018/8/17  
+    public static void glDeleteTexture(int textureId) {
+        
+    }
 }

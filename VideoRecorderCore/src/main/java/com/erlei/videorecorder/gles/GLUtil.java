@@ -17,7 +17,9 @@ public class GLUtil {
     public static final int NO_TEXTURE = -1;
     private static final String TAG = "GLUtil";
     private static final int SIZEOF_FLOAT = 4;
-    /** Identity matrix for general use.  Don't modify or life will get weird. */
+    /**
+     * Identity matrix for general use.  Don't modify or life will get weird.
+     */
     public static final float[] IDENTITY_MATRIX;
     public static int GL_VERSION = -1;
 
@@ -26,6 +28,7 @@ public class GLUtil {
         Matrix.setIdentityM(IDENTITY_MATRIX, 0);
         System.loadLibrary("glutil-lib");
     }
+
     public static int loadTexture(final Bitmap img, final int usedTexId, final boolean recycle) {
         int textures[] = new int[1];
         if (usedTexId == NO_TEXTURE) {
@@ -51,6 +54,7 @@ public class GLUtil {
         }
         return textures[0];
     }
+
     public static void checkGlError(String op) {
         int error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
@@ -59,11 +63,13 @@ public class GLUtil {
             throw new RuntimeException(msg);
         }
     }
+
     public static void checkLocation(int location, String label) {
         if (location < 0) {
             throw new RuntimeException("Unable to locate '" + label + "' in program");
         }
     }
+
     /**
      * Creates a new program from the supplied vertex and fragment shaders.
      *
@@ -124,8 +130,8 @@ public class GLUtil {
     /**
      * Creates a texture from raw data.
      *
-     * @param data Image data, in a "direct" ByteBuffer.
-     * @param width Texture width, in pixels (not bytes).
+     * @param data   Image data, in a "direct" ByteBuffer.
+     * @param width  Texture width, in pixels (not bytes).
      * @param height Texture height, in pixels.
      * @param format Image data format (use constant appropriate for glTexImage2D(), e.g. GL_RGBA).
      * @return Handle to texture.
@@ -189,6 +195,7 @@ public class GLUtil {
             }
         }
     }
+
     public static native void glReadPixels(
             int x,
             int y,
@@ -199,13 +206,26 @@ public class GLUtil {
             int offset
     );
 
-    // TODO: 2018/8/17  
     public static int glGenTexture() {
-        return 0;
+        int[] ints = new int[1];
+        GLES20.glGenTextures(ints.length, ints, 0);
+        GLUtil.checkGlError("glGenTextures");
+        return ints[0];
     }
 
-    // TODO: 2018/8/17  
     public static void glDeleteTexture(int textureId) {
-        
+        int[] ints = new int[]{textureId};
+        GLES20.glDeleteTextures(ints.length, ints, 0);
+    }
+
+    public static int glGenBuffer() {
+        int[] ints = new int[1];
+        GLES20.glGenBuffers(1, ints, 0);
+        return ints[0];
+    }
+
+    public static void glDeleteBuffer(int bufferHandle) {
+        int[] ints = new int[]{bufferHandle};
+        GLES20.glDeleteBuffers(ints.length, ints, 0);
     }
 }

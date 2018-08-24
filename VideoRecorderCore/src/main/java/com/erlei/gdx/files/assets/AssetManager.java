@@ -18,22 +18,27 @@ package com.erlei.gdx.files.assets;
 
 
 import com.erlei.gdx.files.AssetErrorListener;
+import com.erlei.gdx.files.TextureLoader;
 import com.erlei.gdx.graphics.Texture;
 import com.erlei.gdx.graphics.g2d.BitmapFont;
+import com.erlei.gdx.graphics.g2d.PolygonRegion;
+import com.erlei.gdx.graphics.g2d.ShaderProgram;
+import com.erlei.gdx.graphics.g2d.TextureAtlas;
+import com.erlei.gdx.utils.Array;
 import com.erlei.gdx.utils.Disposable;
 import com.erlei.gdx.utils.GdxRuntimeException;
 import com.erlei.gdx.utils.Logger;
+import com.erlei.gdx.utils.ObjectIntMap;
+import com.erlei.gdx.utils.ObjectMap;
+import com.erlei.gdx.utils.ObjectSet;
 import com.erlei.gdx.utils.Pixmap;
 import com.erlei.gdx.utils.async.AsyncExecutor;
 import com.erlei.gdx.utils.async.ThreadUtils;
+import com.erlei.gdx.utils.reflect.ClassReflection;
 import com.erlei.videorecorder.util.LogUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Stack;
+
 
 /**
  * Loads and stores assets like textures, bitmapfonts, tile maps, sounds, music and so on.
@@ -41,13 +46,13 @@ import java.util.Stack;
  * @author mzechner
  */
 public class AssetManager implements Disposable {
-    final HashMap<Class, HashMap<String, RefCountedContainer>> assets = new HashMap();
-    final HashMap<String, Class> assetTypes = new HashMap();
-    final HashMap<String, ArrayList<String>> assetDependencies = new HashMap();
-    final Set<String> injected = new HashSet<>();
+    final ObjectMap<Class, ObjectMap<String, RefCountedContainer>> assets = new ObjectMap();
+    final ObjectMap<String, Class> assetTypes = new ObjectMap();
+    final ObjectMap<String, Array<String>> assetDependencies = new ObjectMap();
+    final ObjectSet<String> injected = new ObjectSet();
 
-    final HashMap<Class, HashMap<String, AssetLoader>> loaders = new HashMap();
-    final ArrayList<AssetDescriptor> loadQueue = new ArrayList();
+    final ObjectMap<Class, ObjectMap<String, AssetLoader>> loaders = new ObjectMap();
+    final Array<AssetDescriptor> loadQueue = new Array();
     final AsyncExecutor executor;
 
     final Stack<AssetLoadingTask> tasks = new Stack();
@@ -83,23 +88,20 @@ public class AssetManager implements Disposable {
     public AssetManager(FileHandleResolver resolver, boolean defaultLoaders) {
         this.resolver = resolver;
         if (defaultLoaders) {
+            // TODO: 2018/8/20 AssetManager defaultLoaders
             setLoader(BitmapFont.class, new BitmapFontLoader(resolver));
-            setLoader(Music.class, new MusicLoader(resolver));
             setLoader(Pixmap.class, new PixmapLoader(resolver));
-            setLoader(Sound.class, new SoundLoader(resolver));
             setLoader(TextureAtlas.class, new TextureAtlasLoader(resolver));
             setLoader(Texture.class, new TextureLoader(resolver));
-            setLoader(Skin.class, new SkinLoader(resolver));
-            setLoader(ParticleEffect.class, new ParticleEffectLoader(resolver));
-            setLoader(com.badlogic.gdx.graphics.g3d.particles.ParticleEffect.class,
-                    new com.badlogic.gdx.graphics.g3d.particles.ParticleEffectLoader(resolver));
+//            setLoader(Skin.class, new SkinLoader(resolver));
+//            setLoader(ParticleEffect.class, new ParticleEffectLoader(resolver));
             setLoader(PolygonRegion.class, new PolygonRegionLoader(resolver));
-            setLoader(I18NBundle.class, new I18NBundleLoader(resolver));
-            setLoader(Model.class, ".g3dj", new G3dModelLoader(new JsonReader(), resolver));
-            setLoader(Model.class, ".g3db", new G3dModelLoader(new UBJsonReader(), resolver));
-            setLoader(Model.class, ".obj", new ObjLoader(resolver));
+//            setLoader(I18NBundle.class, new I18NBundleLoader(resolver));
+//            setLoader(Model.class, ".g3dj", new G3dModelLoader(new JsonReader(), resolver));
+//            setLoader(Model.class, ".g3db", new G3dModelLoader(new UBJsonReader(), resolver));
+//            setLoader(Model.class, ".obj", new ObjLoader(resolver));
             setLoader(ShaderProgram.class, new ShaderProgramLoader(resolver));
-            setLoader(Cubemap.class, new CubemapLoader(resolver));
+//            setLoader(Cubemap.class, new CubemapLoader(resolver));
         }
         executor = new AsyncExecutor(1);
     }
@@ -120,7 +122,7 @@ public class AssetManager implements Disposable {
     public synchronized <T> T get(String fileName) {
         Class<T> type = assetTypes.get(fileName);
         if (type == null) throw new GdxRuntimeException("Asset not loaded: " + fileName);
-        HashMap<String, RefCountedContainer> assetsByType = assets.get(type);
+        ObjectMap<String, RefCountedContainer> assetsByType = assets.get(type);
         if (assetsByType == null) throw new GdxRuntimeException("Asset not loaded: " + fileName);
         RefCountedContainer assetContainer = assetsByType.get(fileName);
         if (assetContainer == null) throw new GdxRuntimeException("Asset not loaded: " + fileName);
@@ -135,7 +137,7 @@ public class AssetManager implements Disposable {
      * @return the asset
      */
     public synchronized <T> T get(String fileName, Class<T> type) {
-        HashMap<String, RefCountedContainer> assetsByType = assets.get(type);
+        ObjectMap<String, RefCountedContainer> assetsByType = assets.get(type);
         if (assetsByType == null) throw new GdxRuntimeException("Asset not loaded: " + fileName);
         RefCountedContainer assetContainer = assetsByType.get(fileName);
         if (assetContainer == null) throw new GdxRuntimeException("Asset not loaded: " + fileName);
@@ -148,11 +150,11 @@ public class AssetManager implements Disposable {
      * @param type the asset type
      * @return all the assets matching the specified type
      */
-    public synchronized <T> ArrayList<T> getAll(Class<T> type, ArrayList<T> out) {
-        HashMap<String, RefCountedContainer> assetsByType = assets.get(type);
+    public synchronized <T> Array<T> getAll(Class<T> type, Array<T> out) {
+        ObjectMap<String, RefCountedContainer> assetsByType = assets.get(type);
         if (assetsByType != null) {
-            for (HashMap.Entry<String, RefCountedContainer> asset : assetsByType.entrySet()) {
-                out.add(asset.getValue().getObject(type));
+            for (ObjectMap.Entry<String, RefCountedContainer> asset : assetsByType.entries()) {
+                out.add(asset.value.getObject(type));
             }
         }
         return out;
@@ -173,7 +175,7 @@ public class AssetManager implements Disposable {
         if (tasks.size() > 0 && tasks.firstElement().assetDesc.fileName.equals(fileName))
             return true;
 
-        for (int i = 0; i < loadQueue.size(); i++)
+        for (int i = 0; i < loadQueue.size; i++)
             if (loadQueue.get(i).fileName.equals(fileName)) return true;
 
         return isLoaded(fileName);
@@ -188,7 +190,7 @@ public class AssetManager implements Disposable {
             if (assetDesc.type == type && assetDesc.fileName.equals(fileName)) return true;
         }
 
-        for (int i = 0; i < loadQueue.size(); i++) {
+        for (int i = 0; i < loadQueue.size; i++) {
             AssetDescriptor assetDesc = loadQueue.get(i);
             if (assetDesc.type == type && assetDesc.fileName.equals(fileName)) return true;
         }
@@ -215,7 +217,7 @@ public class AssetManager implements Disposable {
 
         // check if it's in the queue
         int foundIndex = -1;
-        for (int i = 0; i < loadQueue.size(); i++) {
+        for (int i = 0; i < loadQueue.size; i++) {
             if (loadQueue.get(i).fileName.equals(fileName)) {
                 foundIndex = i;
                 break;
@@ -223,7 +225,7 @@ public class AssetManager implements Disposable {
         }
         if (foundIndex != -1) {
             toLoad--;
-            loadQueue.remove(foundIndex);
+            loadQueue.removeIndex(foundIndex);
             log.info("Unload (from queue): " + fileName);
             return;
         }
@@ -251,7 +253,7 @@ public class AssetManager implements Disposable {
         }
 
         // remove any dependencies (or just decrement their ref count).
-        ArrayList<String> dependencies = assetDependencies.get(fileName);
+        Array<String> dependencies = assetDependencies.get(fileName);
         if (dependencies != null) {
             for (String dependency : dependencies) {
                 if (isLoaded(dependency)) unload(dependency);
@@ -268,9 +270,9 @@ public class AssetManager implements Disposable {
      * @return whether the asset is contained in this manager
      */
     public synchronized <T> boolean containsAsset(T asset) {
-        HashMap<String, RefCountedContainer> assetsByType = assets.get(asset.getClass());
+        ObjectMap<String, RefCountedContainer> assetsByType = assets.get(asset.getClass());
         if (assetsByType == null) return false;
-        for (String fileName : assetsByType.keySet()) {
+        for (String fileName : assetsByType.keys()) {
             T otherAsset = (T) assetsByType.get(fileName).getObject(Object.class);
             if (otherAsset == asset || asset.equals(otherAsset)) return true;
         }
@@ -282,9 +284,9 @@ public class AssetManager implements Disposable {
      * @return the filename of the asset or null
      */
     public synchronized <T> String getAssetFileName(T asset) {
-        for (Class assetType : assets.keySet()) {
-            HashMap<String, RefCountedContainer> assetsByType = assets.get(assetType);
-            for (String fileName : assetsByType.keySet()) {
+        for (Class assetType : assets.keys()) {
+            ObjectMap<String, RefCountedContainer> assetsByType = assets.get(assetType);
+            for (String fileName : assetsByType.keys()) {
                 T otherAsset = (T) assetsByType.get(fileName).getObject(Object.class);
                 if (otherAsset == asset || asset.equals(otherAsset)) return fileName;
             }
@@ -314,7 +316,7 @@ public class AssetManager implements Disposable {
      * @return whether the asset is loaded
      */
     public synchronized boolean isLoaded(String fileName, Class type) {
-        HashMap<String, RefCountedContainer> assetsByType = assets.get(type);
+        ObjectMap<String, RefCountedContainer> assetsByType = assets.get(type);
         if (assetsByType == null) return false;
         RefCountedContainer assetContainer = assetsByType.get(fileName);
         if (assetContainer == null) return false;
@@ -340,15 +342,15 @@ public class AssetManager implements Disposable {
      * @return The loader capable of loading the type and filename, or null if none exists
      */
     public <T> AssetLoader getLoader(final Class<T> type, final String fileName) {
-        final HashMap<String, AssetLoader> loaders = this.loaders.get(type);
-        if (loaders == null || loaders.size() < 1) return null;
+        final ObjectMap<String, AssetLoader> loaders = this.loaders.get(type);
+        if (loaders == null || loaders.size < 1) return null;
         if (fileName == null) return loaders.get("");
         AssetLoader result = null;
         int l = -1;
-        for (HashMap.Entry<String, AssetLoader> entry : loaders.entrySet()) {
-            if (entry.getKey().length() > l && fileName.endsWith(entry.getKey())) {
-                result = entry.getValue();
-                l = entry.getKey().length();
+        for (ObjectMap.Entry<String, AssetLoader> entry : loaders.entries()) {
+            if (entry.key.length() > l && fileName.endsWith(entry.key)) {
+                result = entry.value;
+                l = entry.key.length();
             }
         }
         return result;
@@ -374,10 +376,10 @@ public class AssetManager implements Disposable {
     public synchronized <T> void load(String fileName, Class<T> type, AssetLoaderParameters<T> parameter) {
         AssetLoader loader = getLoader(type, fileName);
         if (loader == null)
-            throw new GdxRuntimeException("No loader for type: " + type.getSimpleName());
+            throw new GdxRuntimeException("No loader for type: " + ClassReflection.getSimpleName(type));
 
         // reset stats
-        if (loadQueue.size() == 0) {
+        if (loadQueue.size == 0) {
             loaded = 0;
             toLoad = 0;
             peakTasks = 0;
@@ -386,12 +388,12 @@ public class AssetManager implements Disposable {
         // check if an asset with the same name but a different type has already been added.
 
         // check preload queue
-        for (int i = 0; i < loadQueue.size(); i++) {
+        for (int i = 0; i < loadQueue.size; i++) {
             AssetDescriptor desc = loadQueue.get(i);
             if (desc.fileName.equals(fileName) && !desc.type.equals(type))
                 throw new GdxRuntimeException(
                         "Asset with name '" + fileName + "' already in preload queue, but has different type (expected: "
-                                + type.getSimpleName() + ", found: " + desc.type.getSimpleName() + ")");
+                                + ClassReflection.getSimpleName(type) + ", found: " + ClassReflection.getSimpleName(desc.type) + ")");
         }
 
         // check task list
@@ -400,14 +402,14 @@ public class AssetManager implements Disposable {
             if (desc.fileName.equals(fileName) && !desc.type.equals(type))
                 throw new GdxRuntimeException(
                         "Asset with name '" + fileName + "' already in task list, but has different type (expected: "
-                                + type.getSimpleName() + ", found: " + desc.type.getSimpleName() + ")");
+                                + ClassReflection.getSimpleName(type) + ", found: " + ClassReflection.getSimpleName(desc.type) + ")");
         }
 
         // check loaded assets
         Class otherType = assetTypes.get(fileName);
         if (otherType != null && !otherType.equals(type))
             throw new GdxRuntimeException("Asset with name '" + fileName + "' already loaded, but has different type (expected: "
-                    + type.getSimpleName() + ", found: " + otherType.getSimpleName() + ")");
+                    + ClassReflection.getSimpleName(type) + ", found: " + ClassReflection.getSimpleName(otherType) + ")");
 
         toLoad++;
         AssetDescriptor assetDesc = new AssetDescriptor(fileName, type, parameter);
@@ -433,16 +435,16 @@ public class AssetManager implements Disposable {
         try {
             if (tasks.size() == 0) {
                 // loop until we have a new task ready to be processed
-                while (loadQueue.size() != 0 && tasks.size() == 0) {
+                while (loadQueue.size != 0 && tasks.size() == 0) {
                     nextTask();
                 }
                 // have we not found a task? We are done!
                 if (tasks.size() == 0) return true;
             }
-            return updateTask() && loadQueue.size() == 0 && tasks.size() == 0;
+            return updateTask() && loadQueue.size == 0 && tasks.size() == 0;
         } catch (Throwable t) {
             handleTaskError(t);
-            return loadQueue.size() == 0;
+            return loadQueue.size == 0;
         }
     }
 
@@ -466,7 +468,7 @@ public class AssetManager implements Disposable {
      * Returns true when all assets are loaded. Can be called from any thread.
      */
     public synchronized boolean isFinished() {
-        return loadQueue.size() == 0 && tasks.size() == 0;
+        return loadQueue.size == 0 && tasks.size() == 0;
     }
 
     /**
@@ -502,8 +504,8 @@ public class AssetManager implements Disposable {
         log.debug("Asset loaded: " + fileName);
     }
 
-    synchronized void injectDependencies(String parentAssetFilename, ArrayList<AssetDescriptor> dependendAssetDescs) {
-        Set<String> injected = this.injected;
+    synchronized void injectDependencies(String parentAssetFilename, Array<AssetDescriptor> dependendAssetDescs) {
+        ObjectSet<String> injected = this.injected;
         for (AssetDescriptor desc : dependendAssetDescs) {
             if (injected.contains(desc.fileName))
                 continue; // Ignore subsequent dependencies if there are duplicates.
@@ -515,9 +517,9 @@ public class AssetManager implements Disposable {
 
     private synchronized void injectDependency(String parentAssetFilename, AssetDescriptor dependendAssetDesc) {
         // add the asset as a dependency of the parent asset
-        ArrayList<String> dependencies = assetDependencies.get(parentAssetFilename);
+        Array<String> dependencies = assetDependencies.get(parentAssetFilename);
         if (dependencies == null) {
-            dependencies = new ArrayList();
+            dependencies = new Array();
             assetDependencies.put(parentAssetFilename, dependencies);
         }
         dependencies.add(dependendAssetDesc.fileName);
@@ -542,7 +544,7 @@ public class AssetManager implements Disposable {
      * a dependency of a previously loaded asset) its reference count will be increased.
      */
     private void nextTask() {
-        AssetDescriptor assetDesc = loadQueue.remove(0);
+        AssetDescriptor assetDesc = loadQueue.removeIndex(0);
 
         // if the asset not meant to be reloaded and is already loaded, increase its reference count
         if (isLoaded(assetDesc.fileName)) {
@@ -570,7 +572,7 @@ public class AssetManager implements Disposable {
     private void addTask(AssetDescriptor assetDesc) {
         AssetLoader loader = getLoader(assetDesc.type, assetDesc.fileName);
         if (loader == null)
-            throw new GdxRuntimeException("No loader for type: " + assetDesc.type.getSimpleName());
+            throw new GdxRuntimeException("No loader for type: " + ClassReflection.getSimpleName(assetDesc.type));
         tasks.push(new AssetLoadingTask(this, assetDesc, loader, executor));
         peakTasks++;
     }
@@ -583,9 +585,9 @@ public class AssetManager implements Disposable {
         assetTypes.put(fileName, type);
 
         // add the asset to the type lookup
-        HashMap<String, RefCountedContainer> typeToAssets = assets.get(type);
+        ObjectMap<String, RefCountedContainer> typeToAssets = assets.get(type);
         if (typeToAssets == null) {
-            typeToAssets = new HashMap<String, RefCountedContainer>();
+            typeToAssets = new ObjectMap<String, RefCountedContainer>();
             assets.put(type, typeToAssets);
         }
         typeToAssets.put(fileName, new RefCountedContainer(asset));
@@ -642,7 +644,7 @@ public class AssetManager implements Disposable {
     }
 
     private void incrementRefCountedDependencies(String parent) {
-        ArrayList<String> dependencies = assetDependencies.get(parent);
+        Array<String> dependencies = assetDependencies.get(parent);
         if (dependencies == null) return;
 
         for (String dependency : dependencies) {
@@ -706,9 +708,9 @@ public class AssetManager implements Disposable {
                                                                                AssetLoader<T, P> loader) {
         if (type == null) throw new IllegalArgumentException("type cannot be null.");
         if (loader == null) throw new IllegalArgumentException("loader cannot be null.");
-        log.debug("Loader set: " + type.getSimpleName() + " -> " + loader.getClass().getSimpleName());
-        HashMap<String, AssetLoader> loaders = this.loaders.get(type);
-        if (loaders == null) this.loaders.put(type, loaders = new HashMap<String, AssetLoader>());
+        log.debug("Loader set: " + ClassReflection.getSimpleName(type) + " -> " + ClassReflection.getSimpleName(loader.getClass()));
+        ObjectMap<String, AssetLoader> loaders = this.loaders.get(type);
+        if (loaders == null) this.loaders.put(type, loaders = new ObjectMap<String, AssetLoader>());
         loaders.put(suffix == null ? "" : suffix, loader);
     }
 
@@ -716,14 +718,14 @@ public class AssetManager implements Disposable {
      * @return the number of loaded assets
      */
     public synchronized int getLoadedAssets() {
-        return assetTypes.size();
+        return assetTypes.size;
     }
 
     /**
      * @return the number of currently queued assets
      */
     public synchronized int getQueuedAssets() {
-        return loadQueue.size() + tasks.size();
+        return loadQueue.size + tasks.size();
     }
 
     /**
@@ -765,31 +767,28 @@ public class AssetManager implements Disposable {
         while (!update())
             ;
 
-        HashMap<String, Integer> dependencyCount = new HashMap<>();
-        while (assetTypes.size() > 0) {
+        ObjectIntMap<String> dependencyCount = new ObjectIntMap<String>();
+        while (assetTypes.size > 0) {
             // for each asset, figure out how often it was referenced
             dependencyCount.clear();
-            Set<String> assets = assetTypes.keySet();
+            Array<String> assets = assetTypes.keys().toArray();
             for (String asset : assets) {
                 dependencyCount.put(asset, 0);
             }
 
             for (String asset : assets) {
-                ArrayList<String> dependencies = assetDependencies.get(asset);
+                Array<String> dependencies = assetDependencies.get(asset);
                 if (dependencies == null) continue;
                 for (String dependency : dependencies) {
-                    Integer integer = dependencyCount.get(dependency);
-                    if (integer != null) {
-                        int count = integer;
-                        count++;
-                        dependencyCount.put(dependency, count);
-                    }
+                    int count = dependencyCount.get(dependency, 0);
+                    count++;
+                    dependencyCount.put(dependency, count);
                 }
             }
 
             // only dispose of assets that are root assets (not referenced)
             for (String asset : assets) {
-                if (dependencyCount.get(asset) == null) {
+                if (dependencyCount.get(asset, 0) == 0) {
                     unload(asset);
                 }
             }
@@ -843,15 +842,15 @@ public class AssetManager implements Disposable {
      */
     public synchronized String getDiagnostics() {
         StringBuilder sb = new StringBuilder();
-        for (String fileName : assetTypes.keySet()) {
+        for (String fileName : assetTypes.keys()) {
             sb.append(fileName);
             sb.append(", ");
 
             Class type = assetTypes.get(fileName);
             RefCountedContainer assetRef = assets.get(type).get(fileName);
-            ArrayList<String> dependencies = assetDependencies.get(fileName);
+            Array<String> dependencies = assetDependencies.get(fileName);
 
-            sb.append(type.getSimpleName());
+            sb.append(ClassReflection.getSimpleName(type));
 
             sb.append(", refs: ");
             sb.append(assetRef.getRefCount());
@@ -872,16 +871,14 @@ public class AssetManager implements Disposable {
     /**
      * @return the file names of all loaded assets.
      */
-    public synchronized ArrayList<String> getAssetNames() {
-        Set<String> strings = assetTypes.keySet();
-        String[] array = new String[strings.size()];
-        return (ArrayList<String>) Arrays.asList(strings.toArray(array));
+    public synchronized Array<String> getAssetNames() {
+        return assetTypes.keys().toArray();
     }
 
     /**
      * @return the dependencies of an asset or null if the asset has no dependencies.
      */
-    public synchronized ArrayList<String> getDependencies(String fileName) {
+    public synchronized Array<String> getDependencies(String fileName) {
         return assetDependencies.get(fileName);
     }
 

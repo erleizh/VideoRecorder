@@ -16,9 +16,6 @@
 
 package com.erlei.gdx.utils;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /** A pool of objects that can be reused to avoid allocation.
  * @see Pools
  * @author Nathan Sweet */
@@ -28,7 +25,7 @@ abstract public class Pool<T> {
 	/** The highest number of free objects. Can be reset any time. */
 	public int peak;
 
-	private final LinkedList<T> freeObjects;
+	private final Array<T> freeObjects;
 
 	/** Creates a pool with an initial capacity of 16 and no maximum. */
 	public Pool() {
@@ -42,7 +39,7 @@ abstract public class Pool<T> {
 
 	/** @param max The maximum number of free objects to store in this pool. */
 	public Pool(int initialCapacity, int max) {
-		freeObjects = new LinkedList();
+		freeObjects = new Array(false, initialCapacity);
 		this.max = max;
 	}
 
@@ -51,16 +48,16 @@ abstract public class Pool<T> {
 	/** Returns an object from this pool. The object may be new (from {@link #newObject()}) or reused (previously
 	 * {@link #free(Object) freed}). */
 	public T obtain () {
-		return freeObjects.size() == 0 ? newObject() : freeObjects.pop();
+		return freeObjects.size == 0 ? newObject() : freeObjects.pop();
 	}
 
 	/** Puts the specified object in the pool, making it eligible to be returned by {@link #obtain()}. If the pool already contains
 	 * {@link #max} free objects, the specified object is reset but not added to the pool. */
 	public void free (T object) {
 		if (object == null) throw new IllegalArgumentException("object cannot be null.");
-		if (freeObjects.size() < max) {
+		if (freeObjects.size < max) {
 			freeObjects.add(object);
-			peak = Math.max(peak, freeObjects.size());
+			peak = Math.max(peak, freeObjects.size);
 		}
 		reset(object);
 	}
@@ -73,17 +70,17 @@ abstract public class Pool<T> {
 
 	/** Puts the specified objects in the pool. Null objects within the array are silently ignored.
 	 * @see #free(Object) */
-	public void freeAll (List<T> objects) {
+	public void freeAll (Array<T> objects) {
 		if (objects == null) throw new IllegalArgumentException("objects cannot be null.");
-		List<T> freeObjects = this.freeObjects;
+		Array<T> freeObjects = this.freeObjects;
 		int max = this.max;
-		for (int i = 0; i < objects.size(); i++) {
+		for (int i = 0; i < objects.size; i++) {
 			T object = objects.get(i);
 			if (object == null) continue;
-			if (freeObjects.size() < max) freeObjects.add(object);
+			if (freeObjects.size < max) freeObjects.add(object);
 			reset(object);
 		}
-		peak = Math.max(peak, freeObjects.size());
+		peak = Math.max(peak, freeObjects.size);
 	}
 
 	/** Removes all free objects from this pool. */
@@ -93,7 +90,7 @@ abstract public class Pool<T> {
 
 	/** The number of objects available to be obtained. */
 	public int getFree () {
-		return freeObjects.size();
+		return freeObjects.size;
 	}
 
 	/** Objects implementing this interface will have {@link #reset()} called when passed to {@link Pool#free(Object)}. */

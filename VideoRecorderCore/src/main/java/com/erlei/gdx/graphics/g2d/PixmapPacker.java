@@ -14,7 +14,7 @@
  * limitations under the License.
  ******************************************************************************/
 
-package com.erlei.gdx.math;
+package com.erlei.gdx.graphics.g2d;
 
 import android.opengl.GLES20;
 
@@ -22,17 +22,17 @@ import com.erlei.gdx.graphics.Color;
 import com.erlei.gdx.graphics.PixmapTextureData;
 import com.erlei.gdx.graphics.Texture;
 import com.erlei.gdx.graphics.Texture.TextureFilter;
-import com.erlei.gdx.graphics.g2d.TextureAtlas;
-import com.erlei.gdx.graphics.g2d.TextureRegion;
+import com.erlei.gdx.graphics.g2d.PixmapPacker.SkylineStrategy.SkylinePage.Row;
+import com.erlei.gdx.math.Rectangle;
+import com.erlei.gdx.utils.Array;
 import com.erlei.gdx.utils.Disposable;
 import com.erlei.gdx.utils.GdxRuntimeException;
+import com.erlei.gdx.utils.OrderedMap;
 import com.erlei.gdx.utils.Pixmap;
+import com.erlei.gdx.utils.Pixmap.Blending;
+import com.erlei.gdx.utils.Pixmap.Format;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
 
 /**
  * Packs {@link Pixmap pixmaps} into one or more {@link Page pages} to generate an atlas of pixmap instances. Provides means to
@@ -105,15 +105,15 @@ public class PixmapPacker implements Disposable {
     int padding;
     boolean duplicateBorder;
     Color transparentColor = new Color(0f, 0f, 0f, 0f);
-    final List<Page> pages = new ArrayList();
+    final Array<Page> pages = new Array();
     PackStrategy packStrategy;
 
     /**
      * Uses {@link GuillotineStrategy}.
      *
-     * @see PixmapPacker#PixmapPacker(int, int, Pixmap.Format, int, boolean, PackStrategy)
+     * @see PixmapPacker#PixmapPacker(int, int, Format, int, boolean, PackStrategy)
      */
-    public PixmapPacker(int pageWidth, int pageHeight, Pixmap.Format pageFormat, int padding, boolean duplicateBorder) {
+    public PixmapPacker(int pageWidth, int pageHeight, Format pageFormat, int padding, boolean duplicateBorder) {
         this(pageWidth, pageHeight, pageFormat, padding, duplicateBorder, new GuillotineStrategy());
     }
 
@@ -125,7 +125,7 @@ public class PixmapPacker implements Disposable {
      * @param duplicateBorder duplicate the border pixels of the inserted images to avoid seams when rendering with bi-linear
      *                        filtering on.
      */
-    public PixmapPacker(int pageWidth, int pageHeight, Pixmap.Format pageFormat, int padding, boolean duplicateBorder,
+    public PixmapPacker(int pageWidth, int pageHeight, Format pageFormat, int padding, boolean duplicateBorder,
                         PackStrategy packStrategy) {
         this.pageWidth = pageWidth;
         this.pageHeight = pageHeight;
@@ -139,7 +139,7 @@ public class PixmapPacker implements Disposable {
      * Sorts the images to the optimzal order they should be packed. Some packing strategies rely heavily on the images being
      * sorted.
      */
-    public void sort(List<Pixmap> images) {
+    public void sort(Array<Pixmap> images) {
         packStrategy.sort(images);
     }
 
@@ -201,7 +201,7 @@ public class PixmapPacker implements Disposable {
         } else
             page.dirty = true;
 
-        page.image.setBlending(Pixmap.Blending.None);
+        page.image.setBlending(Blending.None);
 
         page.image.drawPixmap(image, rectX, rectY);
 
@@ -230,7 +230,7 @@ public class PixmapPacker implements Disposable {
      * @return the {@link Page} instances created so far. If multiple threads are accessing the packer, iterating over the pages
      * must be done only after synchronizing on the packer.
      */
-    public List<Page> getPages() {
+    public Array<Page> getPages() {
         return pages;
     }
 
@@ -265,7 +265,7 @@ public class PixmapPacker implements Disposable {
      * @return the index of the page the image is stored in or -1
      */
     public synchronized int getPageIndex(String name) {
-        for (int i = 0; i < pages.size(); i++) {
+        for (int i = 0; i < pages.size; i++) {
             Rectangle rect = pages.get(i).rects.get(name);
             if (rect != null) return i;
         }
@@ -289,7 +289,7 @@ public class PixmapPacker implements Disposable {
      * Generates a new {@link TextureAtlas} from the pixmaps inserted so far. After calling this method, disposing the packer will
      * no longer dispose the page pixmaps.
      */
-    public synchronized TextureAtlas generateTextureAtlas(Texture.TextureFilter minFilter, Texture.TextureFilter magFilter, boolean useMipMaps) {
+    public synchronized TextureAtlas generateTextureAtlas(Texture.TextureFilter minFilter, TextureFilter magFilter, boolean useMipMaps) {
         TextureAtlas atlas = new TextureAtlas();
         updateTextureAtlas(atlas, minFilter, magFilter, useMipMaps);
         return atlas;
@@ -301,11 +301,11 @@ public class PixmapPacker implements Disposable {
      * the rendering thread. This method must be called on the rendering thread. After calling this method, disposing the packer
      * will no longer dispose the page pixmaps.
      */
-    public synchronized void updateTextureAtlas(TextureAtlas atlas, Texture.TextureFilter minFilter, TextureFilter magFilter,
+    public synchronized void updateTextureAtlas(TextureAtlas atlas, TextureFilter minFilter, TextureFilter magFilter,
                                                 boolean useMipMaps) {
         updatePageTextures(minFilter, magFilter, useMipMaps);
         for (Page page : pages) {
-            if (page.addedRects.size() > 0) {
+            if (page.addedRects.size > 0) {
                 for (String name : page.addedRects) {
                     PixmapPackerRectangle rect = page.rects.get(name);
                     if (rect.splits != null) {
@@ -329,11 +329,11 @@ public class PixmapPacker implements Disposable {
      * Calls {@link Page#updateTexture(TextureFilter, TextureFilter, boolean) updateTexture} for each page and adds a region to
      * the specified array for each page texture.
      */
-    public synchronized void updateTextureRegions(List<TextureRegion> regions, TextureFilter minFilter, TextureFilter magFilter,
+    public synchronized void updateTextureRegions(Array<TextureRegion> regions, TextureFilter minFilter, TextureFilter magFilter,
                                                   boolean useMipMaps) {
         updatePageTextures(minFilter, magFilter, useMipMaps);
-        while (regions.size() < pages.size())
-            regions.add(new TextureRegion(pages.get(regions.size()).texture));
+        while (regions.size < pages.size)
+            regions.add(new TextureRegion(pages.get(regions.size).texture));
     }
 
     /**
@@ -360,11 +360,11 @@ public class PixmapPacker implements Disposable {
         this.pageHeight = pageHeight;
     }
 
-    public Pixmap.Format getPageFormat() {
+    public Format getPageFormat() {
         return pageFormat;
     }
 
-    public void setPageFormat(Pixmap.Format pageFormat) {
+    public void setPageFormat(Format pageFormat) {
         this.pageFormat = pageFormat;
     }
 
@@ -403,10 +403,10 @@ public class PixmapPacker implements Disposable {
      * @author Rob Rendell
      */
     static public class Page {
-        LinkedHashMap<String, PixmapPackerRectangle> rects = new LinkedHashMap<>();
+        OrderedMap<String, PixmapPackerRectangle> rects = new OrderedMap();
         Pixmap image;
         Texture texture;
-        final List<String> addedRects = new ArrayList();
+        final Array<String> addedRects = new Array();
         boolean dirty;
 
         /**
@@ -423,14 +423,14 @@ public class PixmapPacker implements Disposable {
             return image;
         }
 
-        public LinkedHashMap<String, PixmapPackerRectangle> getRects() {
+        public OrderedMap<String, PixmapPackerRectangle> getRects() {
             return rects;
         }
 
         /**
          * Returns the texture for this page, or null if the texture has not been created.
          *
-         * @see #updateTexture(Texture.TextureFilter, Texture.TextureFilter, boolean)
+         * @see #updateTexture(TextureFilter, TextureFilter, boolean)
          */
         public Texture getTexture() {
             return texture;
@@ -442,7 +442,7 @@ public class PixmapPacker implements Disposable {
          *
          * @return true if the texture was created or reuploaded.
          */
-        public boolean updateTexture(Texture.TextureFilter minFilter, Texture.TextureFilter magFilter, boolean useMipMaps) {
+        public boolean updateTexture(TextureFilter minFilter, TextureFilter magFilter, boolean useMipMaps) {
             if (texture != null) {
                 if (!dirty) return false;
                 texture.load(texture.getTextureData());
@@ -467,7 +467,7 @@ public class PixmapPacker implements Disposable {
      * @author Nathan Sweet
      */
     static public interface PackStrategy {
-        public void sort(List<Pixmap> images);
+        public void sort(Array<Pixmap> images);
 
         /**
          * Returns the page the rectangle should be placed in and modifies the specified rectangle position.
@@ -486,7 +486,7 @@ public class PixmapPacker implements Disposable {
     static public class GuillotineStrategy implements PackStrategy {
         Comparator<Pixmap> comparator;
 
-        public void sort(List<Pixmap> pixmaps) {
+        public void sort(Array<Pixmap> pixmaps) {
             if (comparator == null) {
                 comparator = new Comparator<Pixmap>() {
                     public int compare(Pixmap o1, Pixmap o2) {
@@ -494,18 +494,18 @@ public class PixmapPacker implements Disposable {
                     }
                 };
             }
-            Collections.sort(pixmaps, comparator);
+            pixmaps.sort(comparator);
         }
 
         public Page pack(PixmapPacker packer, String name, Rectangle rect) {
             GuillotinePage page;
-            if (packer.pages.size() == 0) {
+            if (packer.pages.size == 0) {
                 // Add a page if empty.
                 page = new GuillotinePage(packer);
                 packer.pages.add(page);
             } else {
                 // Always try to pack into the last page.
-                page = (GuillotinePage) packer.pages.remove(packer.pages.size() - 1);
+                page = (GuillotinePage) packer.pages.peek();
             }
 
             int padding = packer.padding;
@@ -593,7 +593,7 @@ public class PixmapPacker implements Disposable {
     static public class SkylineStrategy implements PackStrategy {
         Comparator<Pixmap> comparator;
 
-        public void sort(List<Pixmap> images) {
+        public void sort(Array<Pixmap> images) {
             if (comparator == null) {
                 comparator = new Comparator<Pixmap>() {
                     public int compare(Pixmap o1, Pixmap o2) {
@@ -601,19 +601,19 @@ public class PixmapPacker implements Disposable {
                     }
                 };
             }
-            Collections.sort(images, comparator);
+            images.sort(comparator);
         }
 
         public Page pack(PixmapPacker packer, String name, Rectangle rect) {
             int padding = packer.padding;
             int pageWidth = packer.pageWidth - padding * 2, pageHeight = packer.pageHeight - padding * 2;
             int rectWidth = (int) rect.width + padding, rectHeight = (int) rect.height + padding;
-            for (int i = 0, n = packer.pages.size(); i < n; i++) {
+            for (int i = 0, n = packer.pages.size; i < n; i++) {
                 SkylinePage page = (SkylinePage) packer.pages.get(i);
                 SkylinePage.Row bestRow = null;
                 // Fit in any row before the last.
-                for (int ii = 0, nn = page.rows.size() - 1; ii < nn; ii++) {
-                    SkylinePage.Row row = page.rows.get(ii);
+                for (int ii = 0, nn = page.rows.size - 1; ii < nn; ii++) {
+                    Row row = page.rows.get(ii);
                     if (row.x + rectWidth >= pageWidth) continue;
                     if (row.y + rectHeight >= pageHeight) continue;
                     if (rectHeight > row.height) continue;
@@ -621,14 +621,14 @@ public class PixmapPacker implements Disposable {
                 }
                 if (bestRow == null) {
                     // Fit in last row, increasing height.
-                    SkylinePage.Row row = page.rows.remove(page.rows.size() - 1);
+                    Row row = page.rows.peek();
                     if (row.y + rectHeight >= pageHeight) continue;
                     if (row.x + rectWidth < pageWidth) {
                         row.height = Math.max(row.height, rectHeight);
                         bestRow = row;
                     } else if (row.y + row.height + rectHeight < pageHeight) {
                         // Fit in new row.
-                        bestRow = new SkylinePage.Row();
+                        bestRow = new Row();
                         bestRow.y = row.y + row.height;
                         bestRow.height = rectHeight;
                         page.rows.add(bestRow);
@@ -644,7 +644,7 @@ public class PixmapPacker implements Disposable {
             // Fit in new page.
             SkylinePage page = new SkylinePage(packer);
             packer.pages.add(page);
-            SkylinePage.Row row = new SkylinePage.Row();
+            Row row = new Row();
             row.x = padding + rectWidth;
             row.y = padding;
             row.height = rectHeight;
@@ -655,7 +655,7 @@ public class PixmapPacker implements Disposable {
         }
 
         static class SkylinePage extends Page {
-            List<Row> rows = new ArrayList<>();
+            Array<Row> rows = new Array();
 
             public SkylinePage(PixmapPacker packer) {
                 super(packer);

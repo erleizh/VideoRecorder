@@ -18,9 +18,7 @@ package com.erlei.gdx.files.assets;
 
 
 import com.erlei.gdx.files.FileHandle;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.erlei.gdx.utils.Array;
 
 /**
  * Abstract base class for asset loaders.
@@ -60,5 +58,5 @@ public abstract class AssetLoader<T, P extends AssetLoaderParameters<T>> {
      * @param parameter parameters for loading the asset
      * @return other assets that the asset depends on and need to be loaded first or null if there are no dependencies.
      */
-    public abstract ArrayList<AssetDescriptor> getDependencies(String fileName, FileHandle file, P parameter);
+    public abstract Array<AssetDescriptor> getDependencies(String fileName, FileHandle file, P parameter);
 }

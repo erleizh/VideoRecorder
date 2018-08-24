@@ -25,10 +25,9 @@ import com.erlei.gdx.files.assets.FileHandleResolver;
 import com.erlei.gdx.graphics.Texture;
 import com.erlei.gdx.graphics.Texture.TextureWrap;
 import com.erlei.gdx.graphics.TextureData;
+import com.erlei.gdx.utils.Array;
 import com.erlei.gdx.utils.Pixmap;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /** {@link AssetLoader} for {@link Texture} instances. The pixel data is loaded asynchronously. The texture is then created on the
  * rendering thread, synchronously. Passing a {@link TextureParameter} to
@@ -88,9 +87,10 @@ public class TextureLoader extends AsynchronousAssetLoader<Texture, TextureLoade
 	}
 
 	@Override
-	public ArrayList<AssetDescriptor> getDependencies (String fileName, FileHandle file, TextureParameter parameter) {
+	public Array<AssetDescriptor> getDependencies (String fileName, FileHandle file, TextureParameter parameter) {
 		return null;
 	}
+
 
 	static public class TextureParameter extends AssetLoaderParameters<Texture> {
 		/** the format of the final Texture. Uses the source images format if null **/

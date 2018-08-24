@@ -16,7 +16,7 @@
 
 package com.erlei.gdx.files;
 
-import com.erlei.gdx.files.assets.AssetManager;
+import android.content.res.AssetManager;
 import android.os.Environment;
 
 import com.erlei.gdx.utils.GdxRuntimeException;

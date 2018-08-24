@@ -18,13 +18,13 @@ package com.erlei.gdx.files;
 
 import android.content.res.AssetFileDescriptor;
 
+import com.erlei.gdx.utils.GdxRuntimeException;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import com.erlei.gdx.files.Files.FileType ;
-import com.erlei.gdx.utils.GdxRuntimeException;
 
 /**
  * @author sarkanyi

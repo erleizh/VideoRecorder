@@ -1,7 +1,9 @@
-package com.erlei.videorecorder.gles;
+package com.erlei.videorecorder.trash;
 
 import android.graphics.PointF;
 import android.opengl.GLES20;
+
+import com.erlei.videorecorder.gles.GLUtil;
 
 import java.nio.FloatBuffer;
 

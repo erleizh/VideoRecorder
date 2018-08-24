@@ -12,5 +12,5 @@ public class Config {
     public static final boolean DEBUG = true;
 
     // TODO: 2018/8/17 App
-    public static final Application app = null;
+    public static  Application app = null;
 }

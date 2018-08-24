@@ -16,6 +16,7 @@
 
 package com.erlei.gdx.graphics;
 
+
 import android.app.Application;
 import android.opengl.GLES20;
 
@@ -25,12 +26,13 @@ import com.erlei.gdx.files.TextureLoader;
 import com.erlei.gdx.files.assets.AssetLoader;
 import com.erlei.gdx.files.assets.AssetLoaderParameters;
 import com.erlei.gdx.files.assets.AssetManager;
+import com.erlei.gdx.utils.Array;
 import com.erlei.gdx.utils.GdxRuntimeException;
 import com.erlei.gdx.utils.Pixmap;
+import com.erlei.gdx.utils.Pixmap.Format;
 import com.erlei.videorecorder.gles.GLUtil;
 import com.erlei.videorecorder.util.Config;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,7 +55,7 @@ import java.util.Map;
  */
 public class Texture extends GLTexture {
     private static AssetManager assetManager;
-    final static Map<Application, ArrayList<Texture>> managedTextures = new HashMap<Application, ArrayList<Texture>>();
+    final static Map<Application, Array<Texture>> managedTextures = new HashMap<Application, Array<Texture>>();
 
     public enum TextureFilter {
         /**
@@ -150,11 +152,11 @@ public class Texture extends GLTexture {
         this(new PixmapTextureData(pixmap, null, useMipMaps, false));
     }
 
-    public Texture(Pixmap pixmap, Pixmap.Format format, boolean useMipMaps) {
+    public Texture(Pixmap pixmap, Format format, boolean useMipMaps) {
         this(new PixmapTextureData(pixmap, format, useMipMaps, false));
     }
 
-    public Texture(int width, int height, Pixmap.Format format) {
+    public Texture(int width, int height, Format format) {
         this(new PixmapTextureData(new Pixmap(width, height, format), null, false, true));
     }
 
@@ -247,12 +249,12 @@ public class Texture extends GLTexture {
         if (glHandle == 0) return;
         delete();
         if (data.isManaged()) if (managedTextures.get(Config.app) != null)
-            managedTextures.get(Config.app).remove(this);
+            managedTextures.get(Config.app).removeValue(this, true);
     }
 
     private static void addManagedTexture(Application app, Texture texture) {
-        ArrayList<Texture> managedTextureArray = managedTextures.get(app);
-        if (managedTextureArray == null) managedTextureArray = new ArrayList<>();
+        Array<Texture> managedTextureArray = managedTextures.get(app);
+        if (managedTextureArray == null) managedTextureArray = new Array<Texture>();
         managedTextureArray.add(texture);
         managedTextures.put(app, managedTextureArray);
     }
@@ -268,11 +270,11 @@ public class Texture extends GLTexture {
      * Invalidate all managed textures. This is an internal method. Do not use it!
      */
     public static void invalidateAllTextures(Application app) {
-        ArrayList<Texture> managedTextureArray = managedTextures.get(app);
+        Array<Texture> managedTextureArray = managedTextures.get(app);
         if (managedTextureArray == null) return;
 
         if (assetManager == null) {
-            for (int i = 0; i < managedTextureArray.size(); i++) {
+            for (int i = 0; i < managedTextureArray.size; i++) {
                 Texture texture = managedTextureArray.get(i);
                 texture.reload();
             }
@@ -284,7 +286,7 @@ public class Texture extends GLTexture {
 
             // next we go through each texture and reload either directly or via the
             // asset manager.
-            ArrayList<Texture> textures = new ArrayList<Texture>(managedTextureArray);
+            Array<Texture> textures = new Array<Texture>(managedTextureArray);
             for (Texture texture : textures) {
                 String fileName = assetManager.getAssetFileName(texture);
                 if (fileName == null) {
@@ -341,7 +343,7 @@ public class Texture extends GLTexture {
         StringBuilder builder = new StringBuilder();
         builder.append("Managed textures/app: { ");
         for (Application app : managedTextures.keySet()) {
-            builder.append(managedTextures.get(app).size());
+            builder.append(managedTextures.get(app).size);
             builder.append(" ");
         }
         builder.append("}");
@@ -352,6 +354,6 @@ public class Texture extends GLTexture {
      * @return the number of managed textures currently loaded
      */
     public static int getNumManagedTextures() {
-        return managedTextures.get(Config.app).size();
+        return managedTextures.get(Config.app).size;
     }
 }

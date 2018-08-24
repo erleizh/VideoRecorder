@@ -16,13 +16,10 @@
 
 package com.erlei.gdx.utils;
 
-import java.util.HashMap;
-import java.util.List;
-
 /** Stores a map of {@link Pool}s (usually {@link ReflectionPool}s) by type for convenient static access.
  * @author Nathan Sweet */
 public class Pools {
-	static private final HashMap<Class, Pool> typePools = new HashMap();
+	static private final ObjectMap<Class, Pool> typePools = new ObjectMap();
 
 	/** Returns a new or existing pool for the specified type, stored in a Class to {@link Pool} map. Note the max size is ignored
 	 * if this is not the first time this pool has been requested. */
@@ -61,16 +58,16 @@ public class Pools {
 
 	/** Frees the specified objects from the {@link #get(Class) pool}. Null objects within the array are silently ignored. Objects
 	 * don't need to be from the same pool. */
-	static public void freeAll (List objects) {
+	static public void freeAll (Array objects) {
 		freeAll(objects, false);
 	}
 
 	/** Frees the specified objects from the {@link #get(Class) pool}. Null objects within the array are silently ignored.
 	 * @param samePool If true, objects don't need to be from the same pool but the pool must be looked up for each object. */
-	static public void freeAll (List objects, boolean samePool) {
+	static public void freeAll (Array objects, boolean samePool) {
 		if (objects == null) throw new IllegalArgumentException("Objects cannot be null.");
 		Pool pool = null;
-		for (int i = 0, n = objects.size(); i < n; i++) {
+		for (int i = 0, n = objects.size; i < n; i++) {
 			Object object = objects.get(i);
 			if (object == null) continue;
 			if (pool == null) {

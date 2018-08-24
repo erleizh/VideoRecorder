@@ -309,28 +309,30 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 .setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
 
         mEffectsManager = new EffectsManager();
-        mEffectsManager.addEffect(new CanvasOverlayEffect() {
-            private FPSCounterFactory.FPSCounter1 mCounter;
-            Paint mPaint;
+//        mEffectsManager.addEffect(new CanvasOverlayEffect() {
+//            private FPSCounterFactory.FPSCounter1 mCounter;
+//            Paint mPaint;
+//
+//            @Override
+//            public void prepare(Size size) {
+//                super.prepare(size);
+//                mPaint = new Paint();
+//                mPaint.setColor(Color.YELLOW);
+//                mPaint.setAlpha(230);
+//                mPaint.setTextSize(40);
+//                mPaint.setStyle(Paint.Style.FILL);
+//                mPaint.setAntiAlias(true);
+//
+//                mCounter = new FPSCounterFactory.FPSCounter1();
+//            }
+//
+//            @Override
+//            protected void drawCanvas(Canvas canvas) {
+//                canvas.drawText(String.format(Locale.getDefault(), "%.2f", mCounter.getFPS()), canvas.getWidth() / 2, canvas.getHeight() / 2, mPaint);
+//            }
+//        });
+        mEffectsManager.addEffect(new GdxEffect());
 
-            @Override
-            public void prepare(Size size) {
-                super.prepare(size);
-                mPaint = new Paint();
-                mPaint.setColor(Color.YELLOW);
-                mPaint.setAlpha(230);
-                mPaint.setTextSize(40);
-                mPaint.setStyle(Paint.Style.FILL);
-                mPaint.setAntiAlias(true);
-
-                mCounter = new FPSCounterFactory.FPSCounter1();
-            }
-
-            @Override
-            protected void drawCanvas(Canvas canvas) {
-                canvas.drawText(String.format(Locale.getDefault(), "%.2f", mCounter.getFPS()), canvas.getWidth() / 2, canvas.getHeight() / 2, mPaint);
-            }
-        });
 
         VideoRecorder.Builder builder = new VideoRecorder.Builder(cameraPreview)
                 .setCallbackHandler(new CallbackHandler())

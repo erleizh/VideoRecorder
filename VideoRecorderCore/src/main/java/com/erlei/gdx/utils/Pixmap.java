@@ -18,11 +18,12 @@ package com.erlei.gdx.utils;
 
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.opengl.GLES20;
 
 import com.erlei.gdx.files.FileHandle;
 import com.erlei.gdx.graphics.Color;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -44,43 +45,62 @@ import java.nio.ByteBuffer;
  * </p>
  *
  * @author badlogicgames@gmail.com
+ * todo 删除大部分方法实现
  */
 public class Pixmap implements Disposable {
+
+
     /**
      * Different pixel formats.
      *
      * @author mzechner
      */
     public enum Format {
-        Alpha, Intensity, LuminanceAlpha, RGB565, RGBA4444, RGB888, RGBA8888;
+        ALPHA_8, RGB_565, ARGB_4444, ARGB_8888, RGBA_F16;
 
-        public static int toGdx2DPixmapFormat(Format format) {
-            if (format == Alpha) return Gdx2DPixmap.GDX2D_FORMAT_ALPHA;
-            if (format == Intensity) return Gdx2DPixmap.GDX2D_FORMAT_ALPHA;
-            if (format == LuminanceAlpha) return Gdx2DPixmap.GDX2D_FORMAT_LUMINANCE_ALPHA;
-            if (format == RGB565) return Gdx2DPixmap.GDX2D_FORMAT_RGB565;
-            if (format == RGBA4444) return Gdx2DPixmap.GDX2D_FORMAT_RGBA4444;
-            if (format == RGB888) return Gdx2DPixmap.GDX2D_FORMAT_RGB888;
-            if (format == RGBA8888) return Gdx2DPixmap.GDX2D_FORMAT_RGBA8888;
+        public static Bitmap.Config toBitmapFormat(Format format) {
+            if (format == ALPHA_8) return Bitmap.Config.ALPHA_8;
+            if (format == RGB_565) return Bitmap.Config.RGB_565;
+            if (format == ARGB_4444) return Bitmap.Config.ARGB_4444;
+            if (format == ARGB_8888) return Bitmap.Config.ARGB_8888;
             throw new GdxRuntimeException("Unknown Format: " + format);
         }
 
-        public static Format fromGdx2DPixmapFormat(int format) {
-            if (format == Gdx2DPixmap.GDX2D_FORMAT_ALPHA) return Alpha;
-            if (format == Gdx2DPixmap.GDX2D_FORMAT_LUMINANCE_ALPHA) return LuminanceAlpha;
-            if (format == Gdx2DPixmap.GDX2D_FORMAT_RGB565) return RGB565;
-            if (format == Gdx2DPixmap.GDX2D_FORMAT_RGBA4444) return RGBA4444;
-            if (format == Gdx2DPixmap.GDX2D_FORMAT_RGB888) return RGB888;
-            if (format == Gdx2DPixmap.GDX2D_FORMAT_RGBA8888) return RGBA8888;
-            throw new GdxRuntimeException("Unknown Gdx2DPixmap Format: " + format);
+        public static Format fromBitmapFormat(Bitmap.Config format) {
+            if (format == Bitmap.Config.ALPHA_8) return ALPHA_8;
+            if (format == Bitmap.Config.RGB_565) return RGB_565;
+            if (format == Bitmap.Config.ARGB_8888) return ARGB_8888;
+            if (format == Bitmap.Config.ARGB_4444) return ARGB_4444;
+            throw new GdxRuntimeException("Unknown Pixmap Format: " + format);
         }
 
         public static int toGlFormat(Format format) {
-            return Gdx2DPixmap.toGlFormat(toGdx2DPixmapFormat(format));
+            switch (format) {
+                case ALPHA_8:
+                    return GLES20.GL_ALPHA;
+                case RGB_565:
+                    return GLES20.GL_RGB;
+                case ARGB_4444:
+                case ARGB_8888:
+                    return GLES20.GL_RGBA;
+                default:
+                    throw new GdxRuntimeException("unknown format: " + format);
+            }
         }
 
         public static int toGlType(Format format) {
-            return Gdx2DPixmap.toGlType(toGdx2DPixmapFormat(format));
+            switch (format) {
+                case ALPHA_8:
+                    return GLES20.GL_UNSIGNED_BYTE;
+                case RGB_565:
+                    return GLES20.GL_UNSIGNED_SHORT_5_6_5;
+                case ARGB_4444:
+                    return GLES20.GL_UNSIGNED_SHORT_4_4_4_4;
+                case ARGB_8888:
+                    return GLES20.GL_UNSIGNED_BYTE;
+                default:
+                    throw new GdxRuntimeException("unknown format: " + format);
+            }
         }
     }
 
@@ -107,9 +127,9 @@ public class Pixmap implements Disposable {
 
     final Bitmap pixmap;
     int color = 0;
-
-    private boolean disposed;
-
+    public Bitmap getBitmap() {
+        return pixmap;
+    }
     /**
      * Sets the type of {@link Blending} to be used for all operations. Default is {@link Blending#SourceOver}.
      *
@@ -117,7 +137,7 @@ public class Pixmap implements Disposable {
      */
     public void setBlending(Blending blending) {
         this.blending = blending;
-        pixmap.setBlend(blending == Blending.None ? 0 : 1);
+//        pixmap.setBlend(blending == Blending.None ? 0 : 1);
     }
 
     /**
@@ -128,7 +148,7 @@ public class Pixmap implements Disposable {
      */
     public void setFilter(Filter filter) {
         this.filter = filter;
-        pixmap.setScale(filter == Filter.NearestNeighbour ? Gdx2DPixmap.GDX2D_SCALE_NEAREST : Gdx2DPixmap.GDX2D_SCALE_LINEAR);
+//        pixmap.setScale(filter == Filter.NearestNeighbour ? Gdx2DPixmap.GDX2D_SCALE_NEAREST : Gdx2DPixmap.GDX2D_SCALE_LINEAR);
     }
 
     /**
@@ -139,7 +159,7 @@ public class Pixmap implements Disposable {
      * @param format the {@link Format}
      */
     public Pixmap(int width, int height, Format format) {
-        pixmap = new Gdx2DPixmap(width, height, Format.toGdx2DPixmapFormat(format));
+        pixmap = Bitmap.createBitmap(width, height, Format.toBitmapFormat(format));
         setColor(0, 0, 0, 0);
         fill();
     }
@@ -153,8 +173,8 @@ public class Pixmap implements Disposable {
      */
     public Pixmap(byte[] encodedData, int offset, int len) {
         try {
-            pixmap = new Gdx2DPixmap(encodedData, offset, len, 0);
-        } catch (IOException e) {
+            pixmap = BitmapFactory.decodeByteArray(encodedData, offset, len);
+        } catch (Exception e) {
             throw new GdxRuntimeException("Couldn't load pixmap from image data", e);
         }
     }
@@ -168,18 +188,18 @@ public class Pixmap implements Disposable {
     public Pixmap(FileHandle file) {
         try {
             byte[] bytes = file.readBytes();
-            pixmap = new Gdx2DPixmap(bytes, 0, bytes.length, 0);
+            pixmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         } catch (Exception e) {
             throw new GdxRuntimeException("Couldn't load file: " + file, e);
         }
     }
 
     /**
-     * Constructs a new Pixmap from a {@link Gdx2DPixmap}.
+     * Constructs a new Pixmap from a {@link Bitmap}.
      *
      * @param pixmap
      */
-    public Pixmap(Gdx2DPixmap pixmap) {
+    public Pixmap(Bitmap pixmap) {
         this.pixmap = pixmap;
     }
 
@@ -217,7 +237,7 @@ public class Pixmap implements Disposable {
      * Fills the complete bitmap with the currently set color.
      */
     public void fill() {
-        pixmap.clear(color);
+        pixmap.eraseColor(color);
     }
 
 // /**
@@ -236,7 +256,8 @@ public class Pixmap implements Disposable {
      * @param y2 The y-coordinate of the first point
      */
     public void drawLine(int x, int y, int x2, int y2) {
-        pixmap.drawLine(x, y, x2, y2, color);
+//        pixmap.drawLine(x, y, x2, y2, color);
+
     }
 
     /**
@@ -249,7 +270,7 @@ public class Pixmap implements Disposable {
      * @param height The height in pixels
      */
     public void drawRectangle(int x, int y, int width, int height) {
-        pixmap.drawRect(x, y, width, height, color);
+//        pixmap.drawRect(x, y, width, height, color);
     }
 
     /**
@@ -275,7 +296,7 @@ public class Pixmap implements Disposable {
      * @param srcHeight The height of the area from the other Pixmap in pixels
      */
     public void drawPixmap(Pixmap pixmap, int x, int y, int srcx, int srcy, int srcWidth, int srcHeight) {
-        this.pixmap.drawPixmap(pixmap.pixmap, srcx, srcy, x, y, srcWidth, srcHeight);
+//        this.pixmap.drawPixmap(pixmap.pixmap, srcx, srcy, x, y, srcWidth, srcHeight);
     }
 
     /**
@@ -295,7 +316,7 @@ public class Pixmap implements Disposable {
      */
     public void drawPixmap(Pixmap pixmap, int srcx, int srcy, int srcWidth, int srcHeight, int dstx, int dsty, int dstWidth,
                            int dstHeight) {
-        this.pixmap.drawPixmap(pixmap.pixmap, srcx, srcy, srcWidth, srcHeight, dstx, dsty, dstWidth, dstHeight);
+//        this.pixmap.drawPixmap(pixmap.pixmap, srcx, srcy, srcWidth, srcHeight, dstx, dsty, dstWidth, dstHeight);
     }
 
     /**
@@ -308,7 +329,7 @@ public class Pixmap implements Disposable {
      * @param height The height in pixels
      */
     public void fillRectangle(int x, int y, int width, int height) {
-        pixmap.fillRect(x, y, width, height, color);
+//        pixmap.fillRect(x, y, width, height, color);
     }
 
     /**
@@ -319,7 +340,7 @@ public class Pixmap implements Disposable {
      * @param radius The radius in pixels
      */
     public void drawCircle(int x, int y, int radius) {
-        pixmap.drawCircle(x, y, radius, color);
+//        pixmap.drawCircle(x, y, radius, color);
     }
 
     /**
@@ -330,7 +351,7 @@ public class Pixmap implements Disposable {
      * @param radius The radius in pixels
      */
     public void fillCircle(int x, int y, int radius) {
-        pixmap.fillCircle(x, y, radius, color);
+//        pixmap.fillCircle(x, y, radius, color);
     }
 
     /**
@@ -344,7 +365,7 @@ public class Pixmap implements Disposable {
      * @param y3 The y-coordinate of vertex 3
      */
     public void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3) {
-        pixmap.fillTriangle(x1, y1, x2, y2, x3, y3, color);
+//        pixmap.fillTriangle(x1, y1, x2, y2, x3, y3, color);
     }
 
     /**
@@ -376,13 +397,12 @@ public class Pixmap implements Disposable {
      * Releases all resources associated with this Pixmap.
      */
     public void dispose() {
-        if (disposed) throw new GdxRuntimeException("Pixmap already disposed!");
-        pixmap.dispose();
-        disposed = true;
+        if (pixmap.isRecycled()) throw new GdxRuntimeException("Pixmap already disposed!");
+        pixmap.recycle();
     }
 
     public boolean isDisposed() {
-        return disposed;
+        return pixmap.isRecycled();
     }
 
     /**
@@ -408,32 +428,32 @@ public class Pixmap implements Disposable {
 
     /**
      * Returns the OpenGL ES format of this Pixmap. Used as the seventh parameter to
-     * {@link GL20#glTexImage2D(int, int, int, int, int, int, int, int, java.nio.Buffer)}.
+     * {@link GLES20#glTexImage2D(int, int, int, int, int, int, int, int, java.nio.Buffer)}.
      *
-     * @return one of GL_ALPHA, GL_RGB, GL_RGBA, GL_LUMINANCE, or GL_LUMINANCE_ALPHA.
+     * @return one of GL_ALPHA, GL_RGB, GL_RGBA
      */
     public int getGLFormat() {
-        return pixmap.getGLFormat();
+        return Format.toGlFormat(getFormat());
     }
 
     /**
      * Returns the OpenGL ES format of this Pixmap. Used as the third parameter to
-     * {@link GL20#glTexImage2D(int, int, int, int, int, int, int, int, java.nio.Buffer)}.
+     * {@link GLES20#glTexImage2D(int, int, int, int, int, int, int, int, java.nio.Buffer)}.
      *
-     * @return one of GL_ALPHA, GL_RGB, GL_RGBA, GL_LUMINANCE, or GL_LUMINANCE_ALPHA.
+     * @return one of GL_ALPHA, GL_RGB, GL_RGBA
      */
     public int getGLInternalFormat() {
-        return pixmap.getGLInternalFormat();
+        return Format.toGlFormat(getFormat());
     }
 
     /**
      * Returns the OpenGL ES type of this Pixmap. Used as the eighth parameter to
-     * {@link GL20#glTexImage2D(int, int, int, int, int, int, int, int, java.nio.Buffer)}.
+     * {@link GLES20#glTexImage2D(int, int, int, int, int, int, int, int, java.nio.Buffer)}.
      *
      * @return one of GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_4_4_4_4
      */
     public int getGLType() {
-        return pixmap.getGLType();
+        return Format.toGlType(getFormat());
     }
 
     /**
@@ -445,15 +465,18 @@ public class Pixmap implements Disposable {
      * @return the direct {@link ByteBuffer} holding the pixel data.
      */
     public ByteBuffer getPixels() {
-        if (disposed) throw new GdxRuntimeException("Pixmap already disposed");
-        return pixmap;
+        if (pixmap.isRecycled()) throw new GdxRuntimeException("Pixmap already disposed");
+        int bytes = pixmap.getByteCount();
+        ByteBuffer buf = BufferUtils.newByteBuffer(bytes);
+        pixmap.copyPixelsToBuffer(buf);
+        return buf;
     }
 
     /**
      * @return the {@link Format} of this Pixmap.
      */
     public Format getFormat() {
-        return Format.fromGdx2DPixmapFormat(pixmap.getFormat());
+        return Format.fromBitmapFormat(pixmap.getConfig());
     }
 
     /**

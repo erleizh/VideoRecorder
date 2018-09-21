@@ -84,6 +84,10 @@ public class VideoRecorder implements RenderThread.RenderCallBack, IVideoRecorde
         return mRecordEnabled;
     }
 
+    public boolean isPreviewing() {
+        return mPreviewState;
+    }
+
     /**
      * @return 混合器是否正在运行
      */
@@ -237,7 +241,7 @@ public class VideoRecorder implements RenderThread.RenderCallBack, IVideoRecorde
 
     @Override
     public void onPrepared(EglCore eglCore) {
-        mConfig.cameraController.openCamera(getPreviewTexture());
+
     }
 
     @Override
@@ -344,7 +348,7 @@ public class VideoRecorder implements RenderThread.RenderCallBack, IVideoRecorde
         }
 
         /**
-         * @param file 设置输出文件 , 无论一个 VideoRecorder实例开启几次录制 , 之后最后一次的录制文件会保存
+         * @param file 设置输出文件 , 无论一个 VideoRecorder实例开启几次录制 , 只有最后一次的录制文件会保存
          */
         public Builder setOutPutFile(File file) {
             mP.mOutputFile = file;

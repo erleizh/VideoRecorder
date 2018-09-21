@@ -55,7 +55,6 @@ public final class EglCore {
     private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
     private EGLContext mEGLContext = EGL14.EGL_NO_CONTEXT;
     private EGLConfig mEGLConfig = null;
-    private int mGlVersion = -1;
 
 
     /**
@@ -108,7 +107,7 @@ public final class EglCore {
                     //Log.d(TAG, "Got GLES 3 config");
                     mEGLConfig = config;
                     mEGLContext = context;
-                    mGlVersion = 3;
+                    GLUtil.GL_VERSION = 3;
                 }
             }
         }
@@ -127,7 +126,7 @@ public final class EglCore {
             checkEglError("eglCreateContext");
             mEGLConfig = config;
             mEGLContext = context;
-            mGlVersion = 2;
+            GLUtil.GL_VERSION = 2;
         }
 
         // Confirm with query.
@@ -344,7 +343,7 @@ public final class EglCore {
      * Returns the GLES version this context is configured for (currently 2 or 3).
      */
     public int getGlVersion() {
-        return mGlVersion;
+        return GLUtil.GL_VERSION;
     }
 
     /**

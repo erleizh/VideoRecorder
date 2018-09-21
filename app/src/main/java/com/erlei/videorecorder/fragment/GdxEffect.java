@@ -22,9 +22,8 @@ class GdxEffect implements VideoEffect {
 
     @Override
     public int applyEffect(int fbo, int textureIdIn) {
-
         mBatch.begin();
-        mBatch.draw(mTexture, mSize.getWidth() / 2, mSize.getHeight() / 2);
+        mBatch.draw(mTexture, 0 , 0,mSize.getWidth(),mSize.getHeight());
         mBatch.end();
         return textureIdIn;
     }

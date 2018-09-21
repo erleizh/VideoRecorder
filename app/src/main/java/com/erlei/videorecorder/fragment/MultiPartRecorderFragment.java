@@ -3,9 +3,6 @@ package com.erlei.videorecorder.fragment;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -31,7 +28,6 @@ import com.erlei.videorecorder.BuildConfig;
 import com.erlei.videorecorder.R;
 import com.erlei.videorecorder.camera.Camera;
 import com.erlei.videorecorder.camera.Size;
-import com.erlei.videorecorder.effects.CanvasOverlayEffect;
 import com.erlei.videorecorder.effects.EffectsManager;
 import com.erlei.videorecorder.recorder.CameraController;
 import com.erlei.videorecorder.recorder.DefaultCameraPreview;
@@ -39,7 +35,6 @@ import com.erlei.videorecorder.recorder.ICameraPreview;
 import com.erlei.videorecorder.recorder.IVideoRecorder;
 import com.erlei.videorecorder.recorder.VideoRecorder;
 import com.erlei.videorecorder.recorder.VideoRecorderHandler;
-import com.erlei.videorecorder.util.FPSCounterFactory;
 import com.erlei.videorecorder.util.LogUtil;
 import com.erlei.videorecorder.util.RecordGestureDetector;
 
@@ -201,7 +196,6 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
                 //退到后台可能不会调用onSurfaceTextureDestroyed这个方法
                 // , 如果之后又打开了其他相机app , 会导致重新进入时没有开启预览
                 stopPreview();
-                surface.release();
                 return true;
             }
 
@@ -213,7 +207,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
         ((CheckBox) view.findViewById(R.id.cbToggleFacing)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                mCameraController.setFacing(isChecked ? android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT : android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK);
+                mCameraController.toggleFacing();
             }
         });
 
@@ -249,6 +243,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
 
     private void startPreview() {
         if (mRecorder == null) initRecorder();
+        if (mRecorder.isPreviewing()) return;
         mRecorder.startPreview();
     }
 
@@ -331,7 +326,7 @@ public class MultiPartRecorderFragment extends Fragment implements SettingsDialo
 //                canvas.drawText(String.format(Locale.getDefault(), "%.2f", mCounter.getFPS()), canvas.getWidth() / 2, canvas.getHeight() / 2, mPaint);
 //            }
 //        });
-        mEffectsManager.addEffect(new GdxEffect());
+//        mEffectsManager.addEffect(new GdxEffect());
 
 
         VideoRecorder.Builder builder = new VideoRecorder.Builder(cameraPreview)

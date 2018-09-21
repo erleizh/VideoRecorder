@@ -25,6 +25,12 @@ public interface IVideoRecorder {
      */
     boolean isMuxerRunning();
 
+
+    /**
+     * @return 是否正在预览
+     */
+    boolean isPreviewing();
+
     void onSizeChanged(int width, int height);
 
     void stopPreview();

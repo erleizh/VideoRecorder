@@ -13,6 +13,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import javax.microedition.khronos.opengles.GL10;
+
 public class GLUtil {
     public static final int NO_TEXTURE = -1;
     private static final String TAG = "GLUtil";
@@ -22,6 +24,8 @@ public class GLUtil {
      */
     public static final float[] IDENTITY_MATRIX;
     public static int GL_VERSION = -1;
+
+    private static String extensions;
 
     static {
         IDENTITY_MATRIX = new float[16];
@@ -227,5 +231,10 @@ public class GLUtil {
     public static void glDeleteBuffer(int bufferHandle) {
         int[] ints = new int[]{bufferHandle};
         GLES20.glDeleteBuffers(ints.length, ints, 0);
+    }
+
+    public static boolean supportsExtension(String extension) {
+        if (extensions == null) extensions = GLES20.glGetString(GL10.GL_EXTENSIONS);
+        return extensions.contains(extension);
     }
 }

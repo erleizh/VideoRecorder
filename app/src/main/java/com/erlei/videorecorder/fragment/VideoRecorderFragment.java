@@ -76,6 +76,7 @@ public class VideoRecorderFragment extends Fragment implements SurfaceHolder.Cal
                 .setOutPutFile(new File(getContext().getExternalFilesDir(Environment.DIRECTORY_MOVIES),"1.mp4"))
                 .setChannelCount(2)
                 .build();
+        mRecorder.startPreview();
     }
 
     @Override

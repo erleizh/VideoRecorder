@@ -205,6 +205,11 @@ public class MultiPartRecorder extends VideoRecorderHandler implements IVideoRec
     }
 
     @Override
+    public boolean isPreviewing() {
+        return mRecorder.isPreviewing();
+    }
+
+    @Override
     public void onSizeChanged(int width, int height) {
         mRecorder.onSizeChanged(width, height);
     }

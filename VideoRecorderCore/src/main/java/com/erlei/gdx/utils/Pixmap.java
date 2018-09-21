@@ -19,6 +19,7 @@ package com.erlei.gdx.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.opengl.GLES20;
 
 import com.erlei.gdx.files.FileHandle;
@@ -296,6 +297,10 @@ public class Pixmap implements Disposable {
      * @param srcHeight The height of the area from the other Pixmap in pixels
      */
     public void drawPixmap(Pixmap pixmap, int x, int y, int srcx, int srcy, int srcWidth, int srcHeight) {
+//        Bitmap bitmap = Bitmap.createBitmap(srcWidth, srcHeight, Bitmap.Config.ARGB_8888);
+//        Canvas canvas = new Canvas(bitmap);
+//        canvas.drawBit
+
 //        this.pixmap.drawPixmap(pixmap.pixmap, srcx, srcy, x, y, srcWidth, srcHeight);
     }
 

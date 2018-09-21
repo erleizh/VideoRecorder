@@ -221,6 +221,9 @@ public class Camera {
         if (mCamera == null) return;
         android.hardware.Camera.Parameters cameraParameters = getParameters();
         if (cameraParameters == null) return;
+        //设置帧率区间
+        setPreviewFpsRange(cameraParameters, mBuilder.mFpsRange);
+
         //设置对焦模式
         setFocusMode(cameraParameters, mBuilder.mFocusModes);
 
@@ -291,6 +294,12 @@ public class Camera {
         if (zoom != -1) {
             int target = clamp(zoom, 0, cameraParameters.getMaxZoom());
             if (cameraParameters.isZoomSupported()) cameraParameters.setZoom(target);
+        }
+    }
+    private void setPreviewFpsRange(android.hardware.Camera.Parameters cameraParameters, FpsRange fpsRange) {
+        List<FpsRange> supportedPreviewFpsRange = getSupportedPreviewFpsRange();
+        if (supportedPreviewFpsRange.contains(fpsRange)) {
+            cameraParameters.setPreviewFpsRange(fpsRange.min, fpsRange.max);
         }
     }
 
@@ -932,6 +941,7 @@ public class Camera {
         private SizeSelector mPictureSizeSelector;
         private boolean mRecordingHint;
         private List<String> mWhiteBalances;
+        private FpsRange mFpsRange;
 
         public CameraBuilder(Context context) {
             mContext = context;
@@ -1142,6 +1152,13 @@ public class Camera {
             return this;
         }
 
+        /**
+         * 设置预览帧率区间
+         */
+        public CameraBuilder setPreviewFpsRange(FpsRange fpsRange) {
+            mFpsRange = fpsRange;
+            return this;
+        }
         /**
          * 设置使用 surfaceTexture 预览
          */

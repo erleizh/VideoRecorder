@@ -102,7 +102,7 @@ public class FloatTextureData implements TextureData {
 
     @Override
     public Pixmap.Format getFormat() {
-        return Pixmap.Format.ARGB_8888; // it's not true, but FloatTextureData.getFormat() isn't used anywhere
+        return Pixmap.Format.RGBA8888;// it's not true, but FloatTextureData.getFormat() isn't used anywhere
     }
 
     @Override

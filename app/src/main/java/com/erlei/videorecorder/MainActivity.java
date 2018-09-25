@@ -60,9 +60,9 @@ public class MainActivity extends AppCompatActivity {
 //                Fragment fragment = SurfaceViewFragment.newInstance();
 //        Fragment fragment = CameraGLSurfaceViewFragment.newInstance();
 //            Fragment fragment = CameraGLTextureViewFragment.newInstance();
-            Fragment fragment = VideoRecorderFragment.newInstance();
+//            Fragment fragment = VideoRecorderFragment.newInstance();
 //        Fragment fragment = MultiPartRecorderFragment.newInstance();
-//        Fragment fragment = GdxTestFragment.newInstance();
+        Fragment fragment = GdxTestFragment.newInstance();
         getSupportFragmentManager().beginTransaction().replace(R.id.content, fragment).commitAllowingStateLoss();
     }
 

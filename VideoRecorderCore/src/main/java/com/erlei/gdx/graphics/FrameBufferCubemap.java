@@ -123,17 +123,16 @@ public class FrameBufferCubemap extends GLFrameBuffer<Cubemap> {
 
 	@Override
 	protected void attachFrameBufferColorTexture (Cubemap texture) {
-		GL20 gl = Gdx.gl20;
 		int glHandle = texture.getTextureObjectHandle();
 		Cubemap.CubemapSide[] sides = Cubemap.CubemapSide.values();
 		for (Cubemap.CubemapSide side : sides) {
-			gl.glFramebufferTexture2D(GL20.GL_FRAMEBUFFER, GL20.GL_COLOR_ATTACHMENT0, side.glEnum,
+			GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, side.glEnum,
 				glHandle, 0);
 		}
 	}
 
 	/** Makes the frame buffer current so everything gets drawn to it, must be followed by call to either {@link #nextSide()} or
-	 * {@link #bindSide(com.badlogic.gdx.graphics.Cubemap.CubemapSide)} to activate the side to render onto. */
+	 * {@link #bindSide(Cubemap.CubemapSide)} to activate the side to render onto. */
 	@Override
 	public void bind () {
 		currentSide = -1;

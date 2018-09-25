@@ -42,7 +42,7 @@ public class FPSCounterFactory {
         ArrayList<Long> lst = new ArrayList<>();
         private long msPerFrame = 1;
         private long l;
-        static final int frame = 30;
+        static final int frame = 50;
 
         private void update() {
             long currentTime = System.nanoTime();

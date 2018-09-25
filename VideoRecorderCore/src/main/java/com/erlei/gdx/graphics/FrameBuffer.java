@@ -16,11 +16,9 @@
 
 package com.erlei.gdx.graphics;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture.TextureFilter;
-import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import android.opengl.GLES20;
+import android.opengl.GLES30;
+
 import com.erlei.gdx.utils.GdxRuntimeException;
 import com.erlei.gdx.utils.Pixmap;
 
@@ -80,8 +78,8 @@ public class FrameBuffer extends GLFrameBuffer<Texture> {
 	protected Texture createTexture (FrameBufferTextureAttachmentSpec attachmentSpec) {
 		GLOnlyTextureData data = new GLOnlyTextureData(bufferBuilder.width, bufferBuilder.height, 0, attachmentSpec.internalFormat, attachmentSpec.format, attachmentSpec.type);
 		Texture result = new Texture(data);
-		result.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-		result.setWrap(TextureWrap.ClampToEdge, TextureWrap.ClampToEdge);
+		result.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+		result.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge);
 		return result;
 	}
 
@@ -92,7 +90,7 @@ public class FrameBuffer extends GLFrameBuffer<Texture> {
 
 	@Override
 	protected void attachFrameBufferColorTexture (Texture texture) {
-		Gdx.gl20.glFramebufferTexture2D(GL20.GL_FRAMEBUFFER, GL20.GL_COLOR_ATTACHMENT0, GL20.GL_TEXTURE_2D, texture.getTextureObjectHandle(), 0);
+		GLES30.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, texture.getTextureObjectHandle(), 0);
 	}
 
 	/** See {@link GLFrameBuffer#unbind()} */

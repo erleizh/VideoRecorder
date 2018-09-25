@@ -105,10 +105,9 @@ public class GLOnlyTextureData implements TextureData {
     }
 
     @Override
-    public Pixmap.Format getFormat() {
-        return Pixmap.Format.ARGB_8888;
+    public Pixmap.Format getFormat () {
+        return Pixmap.Format.RGBA8888;
     }
-
     @Override
     public boolean useMipMaps() {
         return false;

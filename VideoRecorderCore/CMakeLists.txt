@@ -18,7 +18,11 @@ add_library(gdx2d-lib SHARED
             src/main/cpp/gdx2d/jpgd.h
             src/main/cpp/gdx2d/jpgd.cpp
             src/main/cpp/gdx2d/gdx2d.h
-            src/main/cpp/gdx2d/gdx2d.c)
+            src/main/cpp/gdx2d/gdx2d.c
+            src/main/cpp/gdx2d/Gdx2DPixmap.h
+            src/main/cpp/gdx2d/Gdx2DPixmap.cpp
+
+            )
 
 find_library(log-lib log)
 find_library(GLESv2-lib GLESv2)

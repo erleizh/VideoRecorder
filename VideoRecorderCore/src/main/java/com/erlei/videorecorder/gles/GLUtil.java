@@ -237,4 +237,31 @@ public class GLUtil {
         if (extensions == null) extensions = GLES20.glGetString(GL10.GL_EXTENSIONS);
         return extensions.contains(extension);
     }
+
+    public static int glGenFramebuffer() {
+        int[] ints = new int[1];
+        GLES20.glGenFramebuffers(1, ints, 0);
+        return ints[0];
+    }
+
+    public static void glDeleteRenderbuffer(int handle) {
+        int[] ints = new int[]{handle};
+        GLES20.glDeleteRenderbuffers(ints.length, ints, 0);
+
+    }
+
+    public static int glGenRenderbuffer() {
+        int[] ints = new int[1];
+        GLES20.glGenRenderbuffers(1, ints, 0);
+        return ints[0];
+    }
+
+    public static void glDeleteFramebuffer(int handle) {
+        int[] ints = new int[]{handle};
+        GLES20.glDeleteRenderbuffers(ints.length, ints, 0);
+    }
+
+    public static boolean isGL30Available() {
+        return GL_VERSION >= 3;
+    }
 }

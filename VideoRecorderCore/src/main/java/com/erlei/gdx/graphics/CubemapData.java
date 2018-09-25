@@ -9,7 +9,6 @@ package com.erlei.gdx.graphics;
  * <p>
  * Before a call to either {@link #consumeCubemapData()}, Cubemap will bind the OpenGL ES texture.</p>
  * <p>
- * Look at {@link KTXTextureData} for example implementation of this interface.
  *
  * @author Vincent Bousquet
  */

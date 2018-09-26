@@ -1,19 +1,22 @@
 package com.erlei.videorecorder.widget;
 
+import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.IntDef;
+import android.view.Surface;
 
 import com.erlei.videorecorder.gles.EglCore;
+import com.erlei.videorecorder.gles.EglSurfaceBase;
 import com.erlei.videorecorder.gles.WindowSurface;
+import com.erlei.videorecorder.util.LogUtil;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 
-import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
@@ -22,6 +25,8 @@ import javax.microedition.khronos.opengles.GL10;
  * Describe : 渲染视图接口
  */
 public interface IRenderView {
+
+    String TAG = "IRenderView";
 
     /**
      * The renderer only renders
@@ -81,120 +86,199 @@ public interface IRenderView {
      */
     void setRenderer(Renderer renderer);
 
+    Object getSurface();
+
 
     interface Renderer {
 
-        void onSurfaceCreated(GL10 var1, EGLConfig var2);
+        void onSurfaceCreated(EglCore egl, WindowSurface windowSurface);
 
-        void onSurfaceChanged(GL10 var1, int var2, int var3);
+        void onSurfaceChanged(int width, int height);
 
         void onDrawFrame(GL10 var1);
     }
 
 
     class RenderThread extends HandlerThread {
-
-        private WeakReference<GLSurfaceView> mSurfaceViewWeakReference;
-        private WeakReference<GLTextureView> mTextureViewWeakReference;
+        // Used to wait for the thread to start.
+        private final Object mStartLock = new Object();
+        private boolean mReady = false;
+        private final WeakReference<Renderer> mRenderWeakReference;
+        private WeakReference<IRenderView> mRenderViewWeakReference;
         private EglCore mEglCore;
         private WindowSurface mWindowSurface;
-        private volatile RenderHandler mHandler;
+        private RenderHandler mHandler;
+        private int mRenderMode;
 
-        public RenderThread(GLSurfaceView surfaceView, Renderer renderer) {
+        public RenderThread(IRenderView renderView, Renderer renderer) {
             super(RenderThread.class.getSimpleName());
             start();
-            mSurfaceViewWeakReference = new WeakReference<>(surfaceView);
+            waitUntilReady();
+
+            mRenderViewWeakReference = new WeakReference<>(renderView);
+            mRenderWeakReference = new WeakReference<>(renderer);
         }
 
-        public RenderThread(GLTextureView textureView, Renderer renderer) {
-            super(RenderThread.class.getSimpleName());
-            start();
-            mTextureViewWeakReference = new WeakReference<>(textureView);
+
+        @Override
+        public void run() {
+            super.run();
+            release();
         }
 
-        /**
-         * This method returns the RenderHandler associated with this thread. If this thread not been started
-         * or for any reason isAlive() returns false, this method will return null. If this thread
-         * has been started, this method will block until the looper has been initialized.
-         *
-         * @return The RenderHandler.
-         */
-        public synchronized RenderHandler getHandler() {
-            if (!isAlive()) return null;
-            if (mHandler == null) {
-                mHandler = new RenderHandler(getLooper(), this);
+        private void release(){
+            if (mWindowSurface != null) {
+                mWindowSurface.release();
+                mWindowSurface = null;
             }
-            return mHandler;
-        }
-
-        public void requestExitAndWait() {
-
+            mEglCore.makeNothingCurrent();
         }
 
         @Override
         protected void onLooperPrepared() {
             super.onLooperPrepared();
+            mHandler = new RenderHandler(getLooper(), this);
             mEglCore = new EglCore(null, EglCore.FLAG_RECORDABLE | EglCore.FLAG_TRY_GLES3);
-            mWindowSurface = new WindowSurface(mEglCore, getSurface(), false);
-            mWindowSurface.makeCurrent();
+            synchronized (mStartLock) {
+                mReady = true;
+                mStartLock.notify();    // signal waitUntilReady()
+            }
+        }
+
+        public RenderHandler getHandler() {
+            return mHandler;
         }
 
 
         private Object getSurface() {
-            GLTextureView textureView = mTextureViewWeakReference == null ? null : mTextureViewWeakReference.get();
-            GLSurfaceView surfaceView = mSurfaceViewWeakReference == null ? null : mSurfaceViewWeakReference.get();
-            if (surfaceView != null) {
-                return surfaceView.getHolder().getSurface();
-            } else if (textureView != null) {
-                return textureView.getSurfaceTexture();
+            if (mRenderViewWeakReference.get() == null) {
+                throw new RuntimeException("renderView can not be null");
             }
-            throw new IllegalStateException("textureView and surfaceView cannot both be null");
+            Object surface = mRenderViewWeakReference.get().getSurface();
+            if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture) && !(surface instanceof EglSurfaceBase)) {
+                throw new RuntimeException("invalid surface: " + surface);
+            }
+            return surface;
         }
 
         /**
          * @return 获取渲染模式
          */
-        int getRenderMode() {
-            return RENDER_MODE_CONTINUOUSLY;
+        public int getRenderMode() {
+            return mRenderMode;
         }
 
+
+        public void shutdown() {
+            getHandler().sendEmptyMessage(RenderHandler.SHUTDOWN);
+            try {
+                join();
+            } catch (InterruptedException ie) {
+                throw new RuntimeException("join was interrupted", ie);
+            }
+        }
+
+        /**
+         * Waits until the render thread is ready to receive messages.
+         * <p>
+         * Call from the UI thread.
+         */
+        private void waitUntilReady() {
+            synchronized (mStartLock) {
+                while (!mReady) {
+                    try {
+                        mStartLock.wait();
+                    } catch (InterruptedException ie) { /* not expected */ }
+                }
+            }
+        }
 
         /**
          * 设置渲染模式
          *
          * @param renderMode 渲染模式
          */
-        void setRenderMode(@RenderMode int renderMode) {
-
+        public void setRenderMode(@RenderMode int renderMode) {
+            getHandler().sendMessage(getHandler().obtainMessage(RenderHandler.SET_RENDER_MODE, renderMode));
         }
 
         public void onResume() {
-
+            getHandler().sendEmptyMessage(RenderHandler.RESUME);
         }
 
         public void onPause() {
-
+            getHandler().sendEmptyMessage(RenderHandler.PAUSE);
         }
 
         public void requestRender() {
-
+            getHandler().sendEmptyMessage(RenderHandler.REQUEST_RENDER);
         }
 
         public void surfaceCreated() {
-
+            getHandler().sendEmptyMessage(RenderHandler.SURFACE_CREATED);
         }
 
         public void onSizeChanged(int width, int height) {
-
+            getHandler().sendMessage(getHandler().obtainMessage(RenderHandler.SIZE_CHANGED, width, height));
         }
 
         public void surfaceDestroyed() {
-
+            getHandler().sendEmptyMessage(RenderHandler.SURFACE_DESTROYED);
         }
 
+        private void handleSurfaceCreated() {
+            mWindowSurface = new WindowSurface(mEglCore, getSurface(), false);
+            mWindowSurface.makeCurrent();
+            Renderer renderer = mRenderWeakReference.get();
+            if (renderer != null) {
+                renderer.onSurfaceCreated(mEglCore, mWindowSurface);
+            }
+        }
+
+        private void handleRequestRender() {
+        }
+
+        private void handleOnPause() {
+        }
+
+        private void handleOnResume() {
+        }
+
+        private void handleSetRenderMode(int renderMode) {
+            mRenderMode = renderMode;
+        }
+
+        private void handleSizeChanged(int width, int height) {
+            Renderer renderer = mRenderWeakReference.get();
+            if (renderer != null) {
+                renderer.onSurfaceChanged(width, height);
+            }
+        }
+
+        private void handleShutdown() {
+            synchronized (mStartLock) {
+                mReady = false;
+            }
+            quit();
+            LogUtil.loge(TAG, "shutdown");
+        }
+
+        private void handleSurfaceDestroyed() {
+
+        }
     }
 
+
     class RenderHandler extends Handler {
+
+        public static final int SURFACE_DESTROYED = 1;
+        public static final int SIZE_CHANGED = 2;
+        public static final int SURFACE_CREATED = 3;
+        public static final int REQUEST_RENDER = 4;
+        public static final int PAUSE = 5;
+        public static final int RESUME = 6;
+        public static final int SHUTDOWN = 7;
+        public static final int SET_RENDER_MODE = 8;
 
         private final WeakReference<RenderThread> mReference;
 
@@ -206,6 +290,37 @@ public interface IRenderView {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            RenderThread renderThread = mReference.get();
+            if (renderThread == null) {
+                LogUtil.loge(TAG, "handleMessage: weak ref is null");
+                return;
+            }
+            switch (msg.what) {
+                case SURFACE_DESTROYED:
+                    renderThread.handleSurfaceDestroyed();
+                    break;
+                case SIZE_CHANGED:
+                    renderThread.handleSizeChanged(msg.arg1, msg.arg2);
+                    break;
+                case SURFACE_CREATED:
+                    renderThread.handleSurfaceCreated();
+                    break;
+                case REQUEST_RENDER:
+                    renderThread.handleSurfaceDestroyed();
+                    break;
+                case PAUSE:
+                    renderThread.handleOnPause();
+                    break;
+                case RESUME:
+                    renderThread.handleOnResume();
+                    break;
+                case SHUTDOWN:
+                    renderThread.handleShutdown();
+                    break;
+                case SET_RENDER_MODE:
+                    renderThread.handleSetRenderMode(msg.arg1);
+                    break;
+            }
         }
     }
 }

@@ -24,22 +24,26 @@ public class LogUtil {
     }
 
     public static void loge(String tag, String msg) {
-        Log.e(TAG + "-" + tag, msg);
+        if (LOG_ENABLE) Log.e(TAG + "-" + tag, msg);
     }
 
     public static void logi(String msg) {
-        Log.i(TAG, msg);
+        if (LOG_ENABLE) if (LOG_ENABLE) Log.i(TAG, msg);
     }
 
     public static void logi(String tag, String msg) {
-        Log.i(TAG + "-" + tag, msg);
+        if (LOG_ENABLE) Log.i(TAG + "-" + tag, msg);
     }
 
     public static void logw(String msg) {
-        Log.w(TAG, msg);
+        if (LOG_ENABLE) Log.w(TAG, msg);
     }
 
     public static void logw(String tag, String msg) {
-        Log.w(TAG + "-" + tag, msg);
+        if (LOG_ENABLE) Log.w(TAG + "-" + tag, msg);
+    }
+
+    public static void loge(String tag, String msg, Throwable throwable) {
+        if (LOG_ENABLE) Log.e(TAG + "-" + tag, msg, throwable);
     }
 }

@@ -62,4 +62,9 @@ public class GLSurfaceView extends SurfaceView implements IRenderView {
     public void setRenderer(Renderer renderer) {
 
     }
+
+    @Override
+    public Object getSurface() {
+        return null;
+    }
 }

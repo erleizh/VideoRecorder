@@ -103,7 +103,7 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
     protected void onDetachedFromWindow() {
         LogUtil.logd(TAG, "onDetachedFromWindow");
         if (mRenderThread != null) {
-            mRenderThread.requestExitAndWait();
+            mRenderThread.shutdown();
         }
         mDetached = true;
         super.onDetachedFromWindow();
@@ -120,6 +120,11 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
         checkRenderThreadState();
         mRenderer = renderer;
         mRenderThread = new RenderThread(this, renderer);
+    }
+
+    @Override
+    public Object getSurface() {
+        return null;
     }
 
     private void checkRenderThreadState() {
@@ -160,7 +165,7 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
     protected void finalize() throws Throwable {
         try {
             if (mRenderThread != null) {
-                mRenderThread.requestExitAndWait();
+                mRenderThread.shutdown();
             }
         } finally {
             super.finalize();

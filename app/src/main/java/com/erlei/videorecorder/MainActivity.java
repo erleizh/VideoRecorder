@@ -7,11 +7,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 
-import com.erlei.videorecorder.fragment.CameraGLTextureViewFragment;
 import com.erlei.videorecorder.fragment.GdxTestFragment;
-import com.erlei.videorecorder.fragment.MultiPartRecorderFragment;
-import com.erlei.videorecorder.fragment.SurfaceViewFragment;
-import com.erlei.videorecorder.fragment.VideoRecorderFragment;
 
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 
@@ -33,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (!checkSelfPermissions(mPermissions)) {
             ActivityCompat.requestPermissions(MainActivity.this, mPermissions, REQUEST_CAMERA);
-        }else {
+        } else {
             setContent();
         }
 

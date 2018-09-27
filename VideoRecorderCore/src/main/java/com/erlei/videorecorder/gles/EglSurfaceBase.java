@@ -189,7 +189,7 @@ public class EglSurfaceBase {
             bos = new BufferedOutputStream(new FileOutputStream(filename));
             Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             bmp.copyPixelsFromBuffer(buf);
-            bmp.compress(Bitmap.CompressFormat.PNG, 90, bos);
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, bos);
             bmp.recycle();
         } finally {
             if (bos != null) bos.close();

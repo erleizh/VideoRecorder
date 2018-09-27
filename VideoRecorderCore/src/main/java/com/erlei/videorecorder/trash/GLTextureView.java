@@ -43,7 +43,7 @@ import javax.microedition.khronos.opengles.GL10;
  */
 @SuppressWarnings("all")
 public class GLTextureView extends TextureView implements TextureView.SurfaceTextureListener {
-    private final static String TAG = "GLTextureView";
+    private final static String TAG = "GLTextureViewI";
     private final static boolean LOG_ATTACH_DETACH = false;
     private final static boolean LOG_THREADS = false;
     private final static boolean LOG_PAUSE_RESUME = false;
@@ -80,7 +80,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
     public final static int DEBUG_CHECK_GL_ERROR = 1;
 
     /**
-     * Log GL calls to the system log at "verbose" level with tag "GLSurfaceView".
+     * Log GL calls to the system log at "verbose" level with tag "GLSurfaceViewI".
      *
      * @see #getDebugFlags
      * @see #setDebugFlags
@@ -161,17 +161,17 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
     }
 
     /**
-     * Control whether the EGL context is preserved when the GLSurfaceView is paused and
+     * Control whether the EGL context is preserved when the GLSurfaceViewI is paused and
      * resumed.
      * <p>
-     * If set to true, then the EGL context may be preserved when the GLSurfaceView is paused.
+     * If set to true, then the EGL context may be preserved when the GLSurfaceViewI is paused.
      * Whether the EGL context is actually preserved or not depends upon whether the
      * Android device that the program is running on can support an arbitrary number of EGL
      * contexts or not. Devices that can only support a limited number of EGL contexts must
      * release the  EGL context in order to allow multiple applications to share the GPU.
      * <p>
-     * If set to false, the EGL context will be released when the GLSurfaceView is paused,
-     * and recreated when the GLSurfaceView is resumed.
+     * If set to false, the EGL context will be released when the GLSurfaceViewI is paused,
+     * and recreated when the GLSurfaceViewI is resumed.
      * <p>
      *
      * The default is false.
@@ -193,8 +193,8 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
      * Set the renderer associated with this view. Also starts the thread that
      * will call the renderer, which in turn causes the rendering to startRecord.
      * <p>This method should be called once and only once in the life-cycle of
-     * a GLSurfaceView.
-     * <p>The following GLSurfaceView methods can only be called <em>before</em>
+     * a GLSurfaceViewI.
+     * <p>The following GLSurfaceViewI methods can only be called <em>before</em>
      * setRenderer is called:
      * <ul>
      * <li>{@link #setEGLConfigChooser(boolean)}
@@ -202,7 +202,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
      * <li>{@link #setEGLConfigChooser(int, int, int, int, int, int)}
      * </ul>
      * <p>
-     * The following GLSurfaceView methods can only be called <em>after</em>
+     * The following GLSurfaceViewI methods can only be called <em>after</em>
      * setRenderer is called:
      * <ul>
      * <li>{@link #getRenderMode()}
@@ -416,7 +416,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 
     /**
      * This method is part of the SurfaceHolder.Callback interface, and is
-     * not normally called or subclassed by clients of GLSurfaceView.
+     * not normally called or subclassed by clients of GLSurfaceViewI.
      */
     public void on(SurfaceHolder holder) {
         mGLThread.surfaceCreated();
@@ -455,7 +455,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 
     /**
      * This method is used as part of the View class and is not normally
-     * called or subclassed by clients of GLSurfaceView.
+     * called or subclassed by clients of GLSurfaceViewI.
      */
     @Override
     protected void onAttachedToWindow() {
@@ -479,7 +479,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 
     /**
      * This method is used as part of the View class and is not normally
-     * called or subclassed by clients of GLSurfaceView.
+     * called or subclassed by clients of GLSurfaceViewI.
      * Must not be called before a renderer has been set.
      */
     @Override
@@ -1537,7 +1537,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 
         /**
          * Set once at thread construction time, nulled out when the parent view is garbage
-         * called. This weak reference allows the GLSurfaceView to be garbage collected while
+         * called. This weak reference allows the GLSurfaceViewI to be garbage collected while
          * the GLThread is still alive.
          */
         private WeakReference<GLTextureView> mGLTextureViewWeakRef;
@@ -1568,7 +1568,7 @@ public class GLTextureView extends TextureView implements TextureView.SurfaceTex
 
         private void flushBuilder() {
             if (mBuilder.length() > 0) {
-                Log.v("GLSurfaceView", mBuilder.toString());
+                Log.v("GLSurfaceViewI", mBuilder.toString());
                 mBuilder.delete(0, mBuilder.length());
             }
         }

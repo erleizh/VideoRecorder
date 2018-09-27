@@ -1,6 +1,5 @@
 package com.erlei.videorecorder.widget;
 
-
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.util.AttributeSet;
@@ -9,11 +8,10 @@ import android.view.TextureView;
 import com.erlei.videorecorder.util.LogUtil;
 
 public class GLTextureView extends TextureView implements IRenderView, TextureView.SurfaceTextureListener {
-
-    private static final String TAG = "GLTextureView";
-
-    private RenderThread mRenderThread;
+    private static final String TAG = "GLSurfaceViewI";
+    private boolean mPreserveEGLContextOnPause;
     private Renderer mRenderer;
+    private GLThread mGLThread;
     private boolean mDetached;
 
     public GLTextureView(Context context) {
@@ -35,12 +33,25 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
         setSurfaceTextureListener(this);
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            if (mGLThread != null) {
+                // GLThread may still be running if this view was never
+                // attached to a window.
+                mGLThread.requestExitAndWait();
+            }
+        } finally {
+            super.finalize();
+        }
+    }
+
     /**
      * @return 获取渲染模式
      */
     @Override
-    public int getRenderMode() {
-        return mRenderThread.getRenderMode();
+    public RenderMode getRenderMode() {
+        return mGLThread.getRenderMode();
     }
 
     /**
@@ -48,7 +59,7 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
      */
     @Override
     public void requestRender() {
-        mRenderThread.requestRender();
+        mGLThread.requestRender();
     }
 
     /**
@@ -57,56 +68,8 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
      * @param renderMode 渲染模式
      */
     @Override
-    public void setRenderMode(int renderMode) {
-        mRenderThread.setRenderMode(renderMode);
-    }
-
-    @Override
-    public void onPause() {
-        mRenderThread.onPause();
-    }
-
-    @Override
-    public void onResume() {
-        mRenderThread.onResume();
-    }
-
-    /**
-     * This method is used as part of the View class and is not normally
-     * called or subclassed by clients of GLSurfaceView.
-     */
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        LogUtil.logd(TAG, "onAttachedToWindow reattach =" + mDetached);
-
-        if (mDetached && (mRenderer != null)) {
-            int renderMode = RENDER_MODE_CONTINUOUSLY;
-            if (mRenderThread != null) {
-                renderMode = mRenderThread.getRenderMode();
-            }
-            mRenderThread = new RenderThread(this, mRenderer);
-            if (renderMode != RENDER_MODE_CONTINUOUSLY) {
-                mRenderThread.setRenderMode(renderMode);
-            }
-            mRenderThread.start();
-        }
-        mDetached = false;
-    }
-
-    /**
-     * This method is used as part of the View class and is not normally
-     * called or subclassed by clients of GLSurfaceView.
-     * Must not be called before a renderer has been set.
-     */
-    @Override
-    protected void onDetachedFromWindow() {
-        LogUtil.logd(TAG, "onDetachedFromWindow");
-        if (mRenderThread != null) {
-            mRenderThread.shutdown();
-        }
-        mDetached = true;
-        super.onDetachedFromWindow();
+    public void setRenderMode(RenderMode renderMode) {
+        mGLThread.setRenderMode(renderMode);
     }
 
     /**
@@ -116,59 +79,158 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
      */
     @Override
     public void setRenderer(Renderer renderer) {
-        if (renderer == null) return;
         checkRenderThreadState();
         mRenderer = renderer;
-        mRenderThread = new RenderThread(this, renderer);
-    }
-
-    @Override
-    public Object getSurface() {
-        return null;
+        mGLThread = new GLThread(this);
+        mGLThread.start();
     }
 
     private void checkRenderThreadState() {
-        if (mRenderThread != null) {
+        if (mGLThread != null) {
             throw new IllegalStateException(
                     "setRenderer has already been called for this instance.");
         }
     }
 
     @Override
+    public Renderer getRenderer() {
+        return mRenderer;
+    }
+
+    /**
+     * Control whether the EGL context is preserved when the GLSurfaceViewI is paused and
+     * resumed.
+     * <p>
+     * If set to true, then the EGL context may be preserved when the GLSurfaceViewI is paused.
+     * <p>
+     * Prior to API level 11, whether the EGL context is actually preserved or not
+     * depends upon whether the Android device can support an arbitrary number of
+     * EGL contexts or not. Devices that can only support a limited number of EGL
+     * contexts must release the EGL context in order to allow multiple applications
+     * to share the GPU.
+     * <p>
+     * If set to false, the EGL context will be released when the GLSurfaceViewI is paused,
+     * and recreated when the GLSurfaceViewI is resumed.
+     * <p>
+     * <p>
+     * The default is false.
+     *
+     * @param preserveOnPause preserve the EGL context when paused
+     */
+    @Override
+    public void setPreserveEGLContextOnPause(boolean preserveOnPause) {
+        mPreserveEGLContextOnPause = preserveOnPause;
+    }
+
+    /**
+     * @return true if the EGL context will be preserved when paused
+     */
+    @Override
+    public boolean getPreserveEGLContextOnPause() {
+        return mPreserveEGLContextOnPause;
+    }
+
+    @Override
+    public Object getSurface() {
+        return getSurfaceTexture();
+    }
+
+
+    /**
+     * Pause the rendering thread, optionally tearing down the EGL context
+     * depending upon the value of {@link #setPreserveEGLContextOnPause(boolean)}.
+     * <p>
+     * This method should be called when it is no longer desirable for the
+     * GLSurfaceViewI to continue rendering, such as in response to
+     * {@link android.app.Activity#onStop Activity.onStop}.
+     * <p>
+     * Must not be called before a renderer has been set.
+     */
+    public void onPause() {
+        mGLThread.onPause();
+    }
+
+    /**
+     * Resumes the rendering thread, re-creating the OpenGL context if necessary. It
+     * is the counterpart to {@link #onPause()}.
+     * <p>
+     * This method should typically be called in
+     * {@link android.app.Activity#onStart Activity.onStart}.
+     * <p>
+     * Must not be called before a renderer has been set.
+     */
+    public void onResume() {
+        mGLThread.onResume();
+    }
+
+    /**
+     * Queue a runnable to be run on the GL rendering thread. This can be used
+     * to communicate with the Renderer on the rendering thread.
+     * Must not be called before a renderer has been set.
+     *
+     * @param r the runnable to be run on the GL rendering thread.
+     */
+    public void queueEvent(Runnable r) {
+        mGLThread.queueEvent(r);
+    }
+
+    /**
+     * This method is used as part of the View class and is not normally
+     * called or subclassed by clients of GLSurfaceViewI.
+     */
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        LogUtil.logd(TAG, "onAttachedToWindow reattach =" + mDetached);
+        if (mDetached && (mRenderer != null)) {
+            RenderMode renderMode = RenderMode.CONTINUOUSLY;
+            if (mGLThread != null) {
+                renderMode = mGLThread.getRenderMode();
+            }
+            mGLThread = new GLThread(this);
+            if (renderMode != RenderMode.CONTINUOUSLY) {
+                mGLThread.setRenderMode(renderMode);
+            }
+            mGLThread.start();
+        }
+        mDetached = false;
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        LogUtil.logd(TAG, "onDetachedFromWindow");
+        if (mGLThread != null) {
+            mGLThread.requestExitAndWait();
+        }
+        mDetached = true;
+        super.onDetachedFromWindow();
+    }
+
+
+    @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
-        mRenderThread.surfaceCreated();
+        mGLThread.surfaceCreated();
     }
 
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {
-        mRenderThread.onSizeChanged(width, height);
+        mGLThread.onWindowResize(width, height);
     }
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldW, int oldH) {
-        super.onSizeChanged(w, h, oldW, oldH);
-        mRenderThread.onSizeChanged(w, h);
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        mGLThread.onWindowResize(w, h);
     }
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-        mRenderThread.surfaceDestroyed();
+        mGLThread.surfaceDestroyed();
         return true;
     }
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
         requestRender();
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            if (mRenderThread != null) {
-                mRenderThread.shutdown();
-            }
-        } finally {
-            super.finalize();
-        }
     }
 }

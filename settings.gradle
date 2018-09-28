@@ -1,1 +1,1 @@
-include ':app', ':VideoRecorderCore', ':MultiPartRecorder'
+include ':app', ':VideoRecorderCore', ':MultiPartRecorder', ':libgdx-for-android'

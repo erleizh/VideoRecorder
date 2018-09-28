@@ -8,7 +8,6 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 
 import com.erlei.videorecorder.fragment.GdxTestFragment;
-import com.erlei.videorecorder.fragment.GdxTestTextureRenderFragment;
 
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 
@@ -59,8 +58,8 @@ public class MainActivity extends AppCompatActivity {
 //            Fragment fragment = CameraGLTextureViewFragment.newInstance();
 //            Fragment fragment = VideoRecorderFragment.newInstance();
 //        Fragment fragment = MultiPartRecorderFragment.newInstance();
-//        Fragment fragment = GdxTestFragment.newInstance();
-        Fragment fragment = GdxTestTextureRenderFragment.newInstance();
+        Fragment fragment = GdxTestFragment.newInstance();
+//        Fragment fragment = GdxTestTextureRenderFragment.newInstance();
         getSupportFragmentManager().beginTransaction().replace(R.id.content, fragment).commitAllowingStateLoss();
     }
 

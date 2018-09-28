@@ -1,5 +1,6 @@
 package com.erlei.videorecorder.fragment;
 
+import com.erlei.gdx.Gdx;
 import com.erlei.gdx.files.AndroidFiles;
 import com.erlei.gdx.graphics.Texture;
 import com.erlei.gdx.graphics.g2d.Batch;
@@ -16,8 +17,8 @@ class GdxEffect implements VideoEffect {
     @Override
     public void prepare(Size size) {
         mSize = size;
-        mBatch = new SpriteBatch(size);
-        mTexture = new Texture(AndroidFiles.getInstance().absolute("/sdcard/test.png"));
+        mBatch = new SpriteBatch();
+        mTexture = new Texture(Gdx.files.absolute("/sdcard/test.png"));
     }
 
     @Override

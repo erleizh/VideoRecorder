@@ -1,6 +1,6 @@
 package com.erlei.videorecorder.fragment;
 
-import android.opengl.GLSurfaceView;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -8,24 +8,23 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.erlei.gdx.files.AndroidFiles;
-import com.erlei.gdx.graphics.FrameBuffer;
+import com.erlei.gdx.Gdx;
+import com.erlei.gdx.android.EglCore;
+import com.erlei.gdx.android.EglSurfaceBase;
+import com.erlei.gdx.android.widget.IRenderView;
+import com.erlei.gdx.graphics.Pixmap;
 import com.erlei.gdx.graphics.Texture;
 import com.erlei.gdx.graphics.g2d.SpriteBatch;
-import com.erlei.gdx.utils.Pixmap;
+import com.erlei.gdx.graphics.glutils.FrameBuffer;
 import com.erlei.videorecorder.R;
-import com.erlei.videorecorder.camera.Size;
 import com.erlei.videorecorder.util.LogUtil;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
 
 /**
  * Created by lll on 2018/9/14
  * Email : lllemail@foxmail.com
  * Describe : 测试GDX
  */
-public class GdxTestFragment extends Fragment implements GLSurfaceView.Renderer {
+public class GdxTestFragment extends Fragment {
 
     private static final String TAG = "GdxTestFragment";
 
@@ -35,7 +34,7 @@ public class GdxTestFragment extends Fragment implements GLSurfaceView.Renderer 
         return new GdxTestFragment();
     }
 
-    private GLSurfaceView mSurfaceView;
+    private com.erlei.gdx.android.widget.GLSurfaceView mSurfaceView;
     private SpriteBatch mBatch;
     private Texture mTexture;
 
@@ -54,51 +53,64 @@ public class GdxTestFragment extends Fragment implements GLSurfaceView.Renderer 
 
     private void initView(View view) {
         mSurfaceView = view.findViewById(R.id.SurfaceView);
-        mSurfaceView.setEGLContextClientVersion(3);
-        mSurfaceView.setRenderer(this);
-        mSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-    }
-
-
-    @Override
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        mFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, mSurfaceView.getWidth(), mSurfaceView.getHeight(), false);
-        mBatch = new SpriteBatch(new Size(mSurfaceView.getWidth(), mSurfaceView.getHeight()));
-        mTexture = new Texture(AndroidFiles.getInstance().internal("593522e9ea624.png"));
+        mSurfaceView.setRenderer(new Renderer(getContext(), mSurfaceView));
+        mSurfaceView.setRenderMode(IRenderView.RenderMode.WHEN_DIRTY);
     }
 
     @Override
-    public void onSurfaceChanged(GL10 gl, int width, int height) {
-
+    public void onResume() {
+        super.onResume();
+        mSurfaceView.onResume();
     }
 
     @Override
-    public void onDrawFrame(GL10 gl) {
-        long millis = System.currentTimeMillis();
-
-        mFrameBuffer.begin();
-        mBatch.begin();
-        mBatch.draw(mTexture, 0, 0, mSurfaceView.getWidth(), mSurfaceView.getHeight());
-        mBatch.end();
-        mFrameBuffer.end();
-        LogUtil.logd(TAG, String.valueOf(System.currentTimeMillis() - millis));
-
-
-        millis = System.currentTimeMillis();
-        mBatch.begin();
-        mBatch.draw(mFrameBuffer.getColorBufferTexture(), 0, 0, mSurfaceView.getWidth(), mSurfaceView.getHeight(), 0, 0,
-                mFrameBuffer.getColorBufferTexture().getWidth(),
-                mFrameBuffer.getColorBufferTexture().getHeight(), false, true);
-        mBatch.end();
-        LogUtil.logd(TAG, String.valueOf(System.currentTimeMillis() - millis));
+    public void onPause() {
+        super.onPause();
+        mSurfaceView.onPause();
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mFrameBuffer.dispose();
-        mTexture.dispose();
-        mBatch.dispose();
-    }
+    private class Renderer extends Gdx {
 
+
+        public Renderer(Context context, IRenderView renderView) {
+            super(context, renderView);
+        }
+
+        @Override
+        public void create(EglCore egl, EglSurfaceBase eglSurface) {
+            super.create(egl, eglSurface);
+            mFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, getWidth(), getHeight(), false);
+            mBatch = new SpriteBatch();
+            mTexture = new Texture(files.internal("593522e9ea624.png"));
+        }
+
+        @Override
+        public void render(EglSurfaceBase windowSurface, Runnable swapErrorRunnable) {
+            super.render(windowSurface, swapErrorRunnable);
+
+            clear();
+
+            mFrameBuffer.begin();
+            mBatch.begin();
+            mBatch.draw(mTexture, 0, 0, mSurfaceView.getWidth(), mSurfaceView.getHeight());
+            mBatch.end();
+            mFrameBuffer.end();
+
+            mBatch.begin();
+            mBatch.draw(mFrameBuffer.getColorBufferTexture(), 0, 0, getWidth(), getHeight(), 0, 0,
+                    mFrameBuffer.getColorBufferTexture().getWidth(),
+                    mFrameBuffer.getColorBufferTexture().getHeight(), false, true);
+            mBatch.end();
+
+            renderEnd();
+        }
+
+        @Override
+        public void dispose() {
+            mFrameBuffer.dispose();
+            mTexture.dispose();
+            mBatch.dispose();
+            super.dispose();
+        }
+    }
 }

@@ -3,7 +3,7 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <android.opengl.GLSurfaceView
+    <com.erlei.gdx.android.widget.GLSurfaceView
         android:id="@+id/SurfaceView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

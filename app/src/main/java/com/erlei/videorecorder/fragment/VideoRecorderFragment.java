@@ -25,6 +25,12 @@ import com.erlei.videorecorder.util.LogUtil;
 import java.io.File;
 import java.util.Locale;
 
+
+/**
+ * Created by lll on 2018/9/21
+ * Email : lllemail@foxmail.com
+ * Describe : 简单的视频录制 ， 使用SurfaceView 预览
+ */
 public class VideoRecorderFragment extends Fragment implements SurfaceHolder.Callback {
 
     private SurfaceView mSurfaceView;
@@ -56,8 +62,10 @@ public class VideoRecorderFragment extends Fragment implements SurfaceHolder.Cal
                 if (mRecorder != null) {
                     if (mRecorder.isRecordEnable()) {
                         mRecorder.stopRecord();
+                        mBtnRecord.setSelected(false);
                     } else {
                         mRecorder.startRecord();
+                        mBtnRecord.setSelected(true);
                     }
                 }
             }
@@ -73,10 +81,11 @@ public class VideoRecorderFragment extends Fragment implements SurfaceHolder.Cal
                 .setCallbackHandler(new CallbackHandler())
                 .setLogFPSEnable(false)
                 .setFrameRate(30)
-                .setOutPutFile(new File(getContext().getExternalFilesDir(Environment.DIRECTORY_MOVIES),"1.mp4"))
+                .setOutPutFile(new File(getContext().getExternalFilesDir(Environment.DIRECTORY_MOVIES), "1.mp4"))
                 .setChannelCount(2)
                 .build();
         mRecorder.startPreview();
+
     }
 
     @Override

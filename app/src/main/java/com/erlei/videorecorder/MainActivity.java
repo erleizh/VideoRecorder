@@ -7,7 +7,10 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 
-import com.erlei.videorecorder.fragment.GdxTestFragment;
+import com.erlei.videorecorder.fragment.SurfaceViewFragment;
+import com.erlei.videorecorder.fragment.SurfaceViewRecorderFragment;
+import com.erlei.videorecorder.fragment.TextureViewRecorderFragment;
+import com.erlei.videorecorder.fragment.VideoRecorderFragment;
 
 import static android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
 
@@ -53,13 +56,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setContent() {
-//                Fragment fragment = SurfaceViewFragment.newInstance();
-//        Fragment fragment = CameraGLSurfaceViewFragment.newInstance();
-//            Fragment fragment = CameraGLTextureViewFragment.newInstance();
-//            Fragment fragment = VideoRecorderFragment.newInstance();
-//        Fragment fragment = MultiPartRecorderFragment.newInstance();
-        Fragment fragment = GdxTestFragment.newInstance();
-//        Fragment fragment = GdxTestTextureRenderFragment.newInstance();
+//        Fragment fragment = SurfaceViewFragment.newInstance();
+//        Fragment fragment = VideoRecorderFragment.newInstance();
+//        Fragment fragment = TextureViewRecorderFragment.newInstance();
+        Fragment fragment = SurfaceViewRecorderFragment.newInstance();
         getSupportFragmentManager().beginTransaction().replace(R.id.content, fragment).commitAllowingStateLoss();
     }
 

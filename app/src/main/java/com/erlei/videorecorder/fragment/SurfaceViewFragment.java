@@ -16,7 +16,7 @@ import com.erlei.videorecorder.util.LogUtil;
 
 /**
  * Created by lll on 2018/1/20.
- * 打开一个相机预览
+ * 简单的打开一个相机预览
  */
 public class SurfaceViewFragment extends Fragment implements SurfaceHolder.Callback, Camera.CameraCallback {
 
@@ -30,13 +30,12 @@ public class SurfaceViewFragment extends Fragment implements SurfaceHolder.Callb
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_camera_surface, container, false);
+        return mSurfaceView = new SurfaceView(getContext());
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        mSurfaceView = view.findViewById(R.id.SurfaceView);
         mSurfaceView.getHolder().addCallback(this);
     }
 
@@ -57,7 +56,13 @@ public class SurfaceViewFragment extends Fragment implements SurfaceHolder.Callb
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        mCamera = new Camera.CameraBuilder(getContext()).useDefaultConfig().setSurfaceHolder(holder).addPreviewCallback(this).build().open();
+        mCamera = new Camera.CameraBuilder(getContext())
+                .useDefaultConfig()
+                .setPreviewSize(new Size(1920, 960))
+                .setSurfaceHolder(holder)
+                .addPreviewCallback(this)
+                .build()
+                .open();
     }
 
     @Override
@@ -84,7 +89,7 @@ public class SurfaceViewFragment extends Fragment implements SurfaceHolder.Callb
     }
 
     /**
-     * 调整SurfaceView的大小比例 , 以避免预览变形
+     * 调整SurfaceView的比例 , 以避免预览变形
      *
      * @param previewSize 预览大小
      */

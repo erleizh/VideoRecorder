@@ -526,7 +526,7 @@ public class Camera {
         } catch (Exception e) {
             loge(e.toString());
             e.printStackTrace();
-            handleCameraCallback(PREVIEW_ERROR, toString());
+            handleCameraCallback(PREVIEW_ERROR, e.toString());
             close();
         }
     }

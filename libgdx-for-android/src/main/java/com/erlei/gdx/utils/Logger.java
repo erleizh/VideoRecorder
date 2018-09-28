@@ -22,7 +22,7 @@ import com.erlei.gdx.Application;
 
 /**
  * Simple logger that uses the {@link Application} logging facilities to output messages. The log level set with
- *  overrides the log level set here.
+ * overrides the log level set here.
  *
  * @author mzechner
  * @author Nathan Sweet
@@ -39,7 +39,7 @@ public class Logger {
     private int level = INFO;
 
     public Logger(String tag) {
-        this(tag, ERROR);
+        this(tag, DEBUG);
     }
 
     public Logger(String tag, int level) {

@@ -14,6 +14,7 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
     private Renderer mRenderer;
     private GLThread mGLThread;
     private boolean mDetached;
+    private int mGLVersion = -1;
 
     public GLTextureView(Context context) {
         super(context);
@@ -49,6 +50,11 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
     }
 
     @Override
+    public void onDestroy() {
+        if (mRenderer != null) mRenderer.release();
+    }
+
+    @Override
     public ViewType getViewType() {
         return ViewType.TextureView;
     }
@@ -63,8 +69,13 @@ public class GLTextureView extends TextureView implements IRenderView, TextureVi
 
     @Override
     public int getGLESVersion() {
-        return mGLThread.getGLESVersion();
+        if (mGLVersion != -1) return mGLVersion;
+        if (mGLThread == null) {
+            return mGLVersion = GLThread.getVersionFromActivityManager(getContext());
+        }
+        return mGLVersion = mGLThread.getGLESVersion();
     }
+
 
     /**
      * 请求渲染

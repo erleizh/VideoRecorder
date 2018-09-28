@@ -16,8 +16,8 @@ import com.erlei.gdx.graphics.Pixmap;
 import com.erlei.gdx.graphics.Texture;
 import com.erlei.gdx.graphics.g2d.SpriteBatch;
 import com.erlei.gdx.graphics.glutils.FrameBuffer;
+import com.erlei.gdx.utils.Logger;
 import com.erlei.videorecorder.R;
-import com.erlei.videorecorder.util.LogUtil;
 
 /**
  * Created by lll on 2018/9/14
@@ -69,8 +69,15 @@ public class GdxTestFragment extends Fragment {
         mSurfaceView.onPause();
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mSurfaceView.onDestroy();
+    }
+
     private class Renderer extends Gdx {
 
+        Logger mLogger = new Logger("Renderer",Logger.DEBUG);
 
         public Renderer(Context context, IRenderView renderView) {
             super(context, renderView);
@@ -79,6 +86,7 @@ public class GdxTestFragment extends Fragment {
         @Override
         public void create(EglCore egl, EglSurfaceBase eglSurface) {
             super.create(egl, eglSurface);
+            mLogger.debug("create");
             mFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, getWidth(), getHeight(), false);
             mBatch = new SpriteBatch();
             mTexture = new Texture(files.internal("593522e9ea624.png"));
@@ -87,7 +95,7 @@ public class GdxTestFragment extends Fragment {
         @Override
         public void render(EglSurfaceBase windowSurface, Runnable swapErrorRunnable) {
             super.render(windowSurface, swapErrorRunnable);
-
+            mLogger.debug("render");
             clear();
 
             mFrameBuffer.begin();
@@ -106,11 +114,29 @@ public class GdxTestFragment extends Fragment {
         }
 
         @Override
+        public void resume() {
+            super.resume();
+            mLogger.debug("resume");
+        }
+
+        @Override
+        public void resize(int width, int height) {
+            super.resize(width, height);
+            mLogger.debug("resize :" + width + "x" + height);
+        }
+
+        @Override
+        public void pause() {
+            super.pause();
+            mLogger.debug("pause");
+        }
+
+        @Override
         public void dispose() {
+            mLogger.debug("dispose");
             mFrameBuffer.dispose();
             mTexture.dispose();
             mBatch.dispose();
-            super.dispose();
         }
     }
 }

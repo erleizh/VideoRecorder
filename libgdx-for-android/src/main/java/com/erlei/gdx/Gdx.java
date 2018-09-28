@@ -24,7 +24,6 @@ import android.os.Debug;
 import com.erlei.gdx.android.AndroidPreferences;
 import com.erlei.gdx.android.EglCore;
 import com.erlei.gdx.android.EglSurfaceBase;
-import com.erlei.gdx.utils.Logger;
 import com.erlei.gdx.android.widget.IRenderView;
 import com.erlei.gdx.files.AndroidFiles;
 import com.erlei.gdx.graphics.AndroidGL20;
@@ -38,6 +37,7 @@ import com.erlei.gdx.graphics.TextureArray;
 import com.erlei.gdx.graphics.glutils.FrameBuffer;
 import com.erlei.gdx.graphics.glutils.ShaderProgram;
 import com.erlei.gdx.utils.FPSCounter;
+import com.erlei.gdx.utils.Logger;
 import com.erlei.gdx.utils.SnapshotArray;
 
 
@@ -67,7 +67,7 @@ public abstract class Gdx implements Application, IRenderView.Renderer {
     protected Runnable mSwapErrorRunnable;
 
     public Gdx(Context context, IRenderView renderView) {
-        this(context.getApplicationContext(), renderView, null);
+        this(context.getApplicationContext(), renderView, renderView.getGLESVersion() == 3 ? new AndroidGL30() : new AndroidGL20());
     }
 
     public Gdx(Context context, IRenderView renderView, GL20 gl) {
@@ -88,11 +88,6 @@ public abstract class Gdx implements Application, IRenderView.Renderer {
         gl = gles;
         gl20 = gles;
         if (gl instanceof AndroidGL30) gl30 = (GL30) gles;
-
-        Logger.info(TAG, "OGL renderer: " + gl.glGetString(GLES10.GL_RENDERER));
-        Logger.info(TAG, "OGL vendor: " + gl.glGetString(GLES10.GL_VENDOR));
-        Logger.info(TAG, "OGL version: " + gl.glGetString(GLES10.GL_VERSION));
-        Logger.info(TAG, "OGL extensions: " + gl.glGetString(GLES10.GL_EXTENSIONS));
     }
 
     public GL20 getGL() {
@@ -187,8 +182,6 @@ public abstract class Gdx implements Application, IRenderView.Renderer {
 
     @Override
     public void create(EglCore egl, EglSurfaceBase eglSurface) {
-        setGLES(egl.getGLVersion() == 3 ? new AndroidGL30() : new AndroidGL20());
-
         Mesh.invalidateAllMeshes(app);
         Texture.invalidateAllTextures(app);
         Cubemap.invalidateAllCubemaps(app);
@@ -227,7 +220,6 @@ public abstract class Gdx implements Application, IRenderView.Renderer {
         clearColor();
         clearBuffers();
     }
-
 
 
     /**
@@ -277,12 +269,23 @@ public abstract class Gdx implements Application, IRenderView.Renderer {
 
     @Override
     public void dispose() {
+
+    }
+
+    @Override
+    public void release() {
         app = null;
         files = null;
         gl = null;
         gl20 = null;
         gl30 = null;
         mRenderView = null;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        release();
+        super.finalize();
     }
 
     public void setGL30(GL30 gles30) {

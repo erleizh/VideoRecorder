@@ -1,6 +1,8 @@
 package com.erlei.gdx.android.widget;
 
+import android.app.ActivityManager;
 import android.content.Context;
+import android.content.pm.ConfigurationInfo;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -14,6 +16,7 @@ public class GLSurfaceView extends SurfaceView implements IRenderView, SurfaceHo
     private Renderer mRenderer;
     private GLThread mGLThread;
     private boolean mDetached;
+    private int mGLVersion = -1;
 
     public GLSurfaceView(Context context) {
         super(context);
@@ -58,6 +61,11 @@ public class GLSurfaceView extends SurfaceView implements IRenderView, SurfaceHo
     }
 
     @Override
+    public void onDestroy() {
+        if (mRenderer != null) mRenderer.release();
+    }
+
+    @Override
     public ViewType getViewType() {
         return ViewType.SurfaceView;
     }
@@ -72,7 +80,11 @@ public class GLSurfaceView extends SurfaceView implements IRenderView, SurfaceHo
 
     @Override
     public int getGLESVersion() {
-        return mGLThread.getGLESVersion();
+        if (mGLVersion != -1) return mGLVersion;
+        if (mGLThread == null) {
+            return mGLVersion = GLThread.getVersionFromActivityManager(getContext());
+        }
+        return mGLVersion = mGLThread.getGLESVersion();
     }
 
     /**
@@ -219,6 +231,5 @@ public class GLSurfaceView extends SurfaceView implements IRenderView, SurfaceHo
         mDetached = true;
         super.onDetachedFromWindow();
     }
-
 
 }

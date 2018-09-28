@@ -1,6 +1,9 @@
 package com.erlei.gdx.android.widget;
 
 
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.pm.ConfigurationInfo;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 
@@ -13,6 +16,9 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 public interface IRenderView {
+
+    void onDestroy();
+
     enum ViewType {
         TextureView, SurfaceView
     }
@@ -170,10 +176,18 @@ public interface IRenderView {
 
     Object getSurface();
 
+    Context getContext();
+
     interface Renderer {
 
+        /**
+         * surface create
+         */
         void create(EglCore egl, EglSurfaceBase eglSurface);
 
+        /**
+         * surface size changed
+         */
         void resize(int width, int height);
 
         /**
@@ -191,11 +205,26 @@ public interface IRenderView {
          */
         void render(EglSurfaceBase windowSurface, Runnable swapErrorRunnable);
 
+        /**
+         * activity onPause
+         */
         void pause();
 
+        /**
+         * activity onResume
+         */
         void resume();
 
+        /**
+         * EglContext destroy
+         */
         void dispose();
+
+
+        /**
+         * When Activity destroy needs to be called
+         */
+        void release();
     }
 
     class RendererAdapter implements Renderer {
@@ -230,6 +259,11 @@ public interface IRenderView {
         public void dispose() {
 
         }
+
+        @Override
+        public void release() {
+
+        }
     }
 
 
@@ -244,6 +278,18 @@ public interface IRenderView {
      * sGLThreadManager object. This avoids multiple-lock ordering issues.
      */
     class GLThread extends Thread {
+
+        public static int getVersionFromActivityManager(Context context) {
+            ActivityManager activityManager =
+                    (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            ConfigurationInfo configInfo = activityManager.getDeviceConfigurationInfo();
+            if (configInfo.reqGlEsVersion != ConfigurationInfo.GL_ES_VERSION_UNDEFINED) {
+                return ((configInfo.reqGlEsVersion & 0xffff0000) >> 16);
+            } else {
+                return (((1 << 16) & 0xffff0000) >> 16); // Lack of property means OpenGL ES version 1
+            }
+        }
+
         private static final String TAG = "GLThread";
 
         // Once the thread is started, all accesses to the following member

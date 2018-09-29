@@ -3,37 +3,68 @@ package com.erlei.videorecorder.widget;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
 
 import com.erlei.gdx.Gdx;
 import com.erlei.gdx.android.EglCore;
 import com.erlei.gdx.android.EglSurfaceBase;
-import com.erlei.gdx.android.widget.IRenderView;
+import com.erlei.gdx.graphics.CameraTexture;
+import com.erlei.gdx.graphics.Mesh;
+import com.erlei.gdx.graphics.Pixmap;
+import com.erlei.gdx.graphics.Texture;
+import com.erlei.gdx.graphics.VertexAttribute;
+import com.erlei.gdx.graphics.VertexAttributes;
+import com.erlei.gdx.graphics.glutils.FrameBuffer;
+import com.erlei.gdx.graphics.glutils.ShaderProgram;
 import com.erlei.gdx.utils.Logger;
-import com.erlei.videorecorder.camera.Camera;
-import com.erlei.videorecorder.recorder.CameraController;
 
-class CameraGLRender extends Gdx implements Camera.CameraCallback, SurfaceTexture.OnFrameAvailableListener {
+class CameraGLRender extends Gdx implements SurfaceTexture.OnFrameAvailableListener {
 
-    private CameraController mCamera;
+    private final ICameraPreview mCameraPreview;
     private Logger mLogger = new Logger("CameraGLRender");
 
-    private SurfaceTexture mTexture;
-    private int mOESTexture;
+    private SurfaceTexture mSurfaceTexture;
+    private CameraTexture mCameraTexture;
+    private ShaderProgram mProgram2d;
+    private ShaderProgram mProgramOES;
+    private float[] mTexMatrixOES = new float[16];
+    private Mesh mMesh;
 
-    CameraGLRender(Context context, IRenderView renderView, CameraController cameraController) {
+    CameraGLRender(Context context, ICameraPreview renderView) {
         super(context, renderView);
-        mCamera = cameraController;
-
+        mCameraPreview = renderView;
     }
 
     @Override
     public void create(EglCore egl, EglSurfaceBase eglSurface) {
         super.create(egl, eglSurface);
-        mLogger.debug("create");
+        mLogger.debug("create(" + mCameraPreview.getSurfaceWidth() + "x" + mCameraPreview.getSurfaceHeight() + ")");
         initSurfaceTexture();
-        mCamera.openCamera(mTexture);
+        initFrameBuffers();
+        initShaderProgram();
+        initMesh();
+        mCameraPreview.startPreview(mSurfaceTexture);
     }
+
+    protected void initMesh() {
+        mMesh = new Mesh(true,4,6,VertexAttribute.Position(),VertexAttribute.ColorPacked(),VertexAttribute.TexCoords(0));
+        mMesh.setVertices(new float[] {-0.5f, -0.5f, 0, 1, 1, 1, 1, 0, 1, 0.5f, -0.5f, 0, 1, 1, 1, 1, 1, 1, 0.5f, 0.5f, 0, 1, 1, 1,
+                1, 1, 0, -0.5f, 0.5f, 0, 1, 1, 1, 1, 0, 0});
+        mMesh.setIndices(new short[] {0, 1, 2, 2, 3, 0});
+
+    }
+
+    protected void initShaderProgram() {
+        mProgram2d = new ShaderProgram(files.internal("shader/vertex_shader.glsl"), files.internal("shader/fragment_shader_2d.glsl"));
+        mProgramOES = new ShaderProgram(files.internal("shader/vertex_shader.glsl"), files.internal("shader/fragment_shader_oes.glsl"));
+    }
+
+    protected void initFrameBuffers() {
+        FrameBuffer frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, getBackBufferWidth(), getBackBufferHeight(), false);
+
+
+    }
+
+
 
     @Override
     public void resize(int width, int height) {
@@ -44,52 +75,56 @@ class CameraGLRender extends Gdx implements Camera.CameraCallback, SurfaceTextur
     @Override
     public void resume() {
         super.resume();
+        mCameraPreview.startPreview(mSurfaceTexture);
         mLogger.debug("resume");
+    }
+
+    @Override
+    public void render(EglSurfaceBase windowSurface, Runnable swapErrorRunnable) {
+        super.render(windowSurface, swapErrorRunnable);
+        mLogger.debug("render");
+        mSurfaceTexture.updateTexImage();
+        mSurfaceTexture.getTransformMatrix(mTexMatrixOES);
+
+        clear();
+
+
     }
 
     @Override
     public void pause() {
         super.pause();
+        mCameraPreview.stopPreview();
         mLogger.debug("pause");
     }
 
     @Override
     public void dispose() {
         super.dispose();
+        mCameraPreview.stopPreview();
         mLogger.debug("dispose");
-    }
-
-    @Override
-    public void onSuccess(Camera camera) {
-        mLogger.info("open camera success");
-    }
-
-    @Override
-    public void onFailure(int code, String msg) {
-        mLogger.error("open camera failure : " + msg);
     }
 
 
     private void deleteSurfaceTexture() {
         mLogger.debug("deleteSurfaceTexture");
-        if (mTexture != null) {
-            mTexture.release();
-            mTexture = null;
-            gl.glDeleteTexture(mOESTexture);
+        if (mSurfaceTexture != null) {
+            mSurfaceTexture.release();
+            mSurfaceTexture = null;
+            mCameraTexture.dispose();
         }
     }
 
     protected void initSurfaceTexture() {
         mLogger.debug("initSurfaceTexture");
         deleteSurfaceTexture();
-        mOESTexture = gl.glGenTexture();
-        gl.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mOESTexture);
-        gl.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        gl.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        gl.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        gl.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-        mTexture = new SurfaceTexture(mOESTexture);
-        mTexture.setOnFrameAvailableListener(this);
+
+        mCameraTexture = new CameraTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+        mCameraTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        mCameraTexture.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge);
+
+        mSurfaceTexture = new SurfaceTexture(mCameraTexture.getTextureObjectHandle());
+        mSurfaceTexture.setOnFrameAvailableListener(this);
     }
 
     @Override
@@ -97,7 +132,5 @@ class CameraGLRender extends Gdx implements Camera.CameraCallback, SurfaceTextur
         mRenderView.requestRender();
     }
 
-    public void setCameraController(CameraController cameraController) {
-        mCamera = cameraController;
-    }
+
 }

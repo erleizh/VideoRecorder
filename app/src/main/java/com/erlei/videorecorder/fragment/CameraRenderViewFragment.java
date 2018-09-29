@@ -7,8 +7,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.erlei.videorecorder.widget.CameraController;
 import com.erlei.videorecorder.widget.CameraGLSurfaceView;
+import com.erlei.videorecorder.widget.DefaultCameraController;
 
 /**
  * Created by lll on 2018/9/28 .
@@ -19,19 +19,17 @@ public class CameraRenderViewFragment extends Fragment {
 
 
     private CameraGLSurfaceView mCameraGLSurfaceView;
-    private CameraController mCameraController;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         mCameraGLSurfaceView = new CameraGLSurfaceView(getContext());
+        mCameraGLSurfaceView.setCameraController(new DefaultCameraController(mCameraGLSurfaceView));
         return mCameraGLSurfaceView;
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        mCameraController = new CameraController(mCameraGLSurfaceView);
-        mCameraGLSurfaceView.setCameraController(mCameraController);
     }
 
     @Override

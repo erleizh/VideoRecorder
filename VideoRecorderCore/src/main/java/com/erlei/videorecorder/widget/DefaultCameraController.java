@@ -9,10 +9,10 @@ import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.view.MotionEvent;
 
-import com.erlei.gdx.android.widget.IRenderView;
 import com.erlei.videorecorder.camera.Camera;
 import com.erlei.videorecorder.camera.FpsRange;
 import com.erlei.videorecorder.camera.Size;
+import com.erlei.videorecorder.recorder.CameraController;
 import com.erlei.videorecorder.recorder.OnDrawTextureListener;
 import com.erlei.videorecorder.recorder.VideoRecorder;
 import com.erlei.videorecorder.util.LogUtil;
@@ -21,9 +21,9 @@ import java.util.List;
 
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
 
-public class CameraController implements com.erlei.videorecorder.recorder.CameraController {
+public class DefaultCameraController implements CameraController {
 
-    private final IRenderView mRenderView;
+    private final ICameraPreview mCameraPreview;
     protected final Context mContext;
     protected VideoRecorder.Config mConfig;
     protected Camera mCamera;
@@ -32,9 +32,9 @@ public class CameraController implements com.erlei.videorecorder.recorder.Camera
     private ValueAnimator mSmoothZoomAnimator;
     private float mOldDist;
 
-    public CameraController(IRenderView iRenderView) {
-        mRenderView = iRenderView;
-        mContext = iRenderView.getContext();
+    public DefaultCameraController(ICameraPreview cameraPreview) {
+        mCameraPreview = cameraPreview;
+        mContext = cameraPreview.getContext();
     }
 
 
@@ -116,7 +116,7 @@ public class CameraController implements com.erlei.videorecorder.recorder.Camera
 
     @Override
     public Size getSurfaceSize() {
-        return new Size(mRenderView.getSurfaceWidth(), mRenderView.getSurfaceHeight());
+        return mCameraPreview.getSurfaceSize();
     }
 
     @Override

@@ -1,13 +1,14 @@
 package com.erlei.gdx.android.widget;
 
-import android.app.ActivityManager;
 import android.content.Context;
-import android.content.pm.ConfigurationInfo;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.erlei.gdx.utils.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class GLSurfaceView extends SurfaceView implements IRenderView, SurfaceHolder.Callback2 {
@@ -17,6 +18,7 @@ public class GLSurfaceView extends SurfaceView implements IRenderView, SurfaceHo
     private GLThread mGLThread;
     private boolean mDetached;
     private int mGLVersion = -1;
+    private List<SurfaceSizeChangeListener> mSizeChangeListeners = new ArrayList<>();
 
     public GLSurfaceView(Context context) {
         super(context);
@@ -63,6 +65,17 @@ public class GLSurfaceView extends SurfaceView implements IRenderView, SurfaceHo
     @Override
     public void onDestroy() {
         if (mRenderer != null) mRenderer.release();
+        mSizeChangeListeners.clear();
+    }
+
+    @Override
+    public void addSurfaceSizeChangeListener(SurfaceSizeChangeListener listener) {
+        mSizeChangeListeners.add(listener);
+    }
+
+    @Override
+    public void removeSurfaceSizeChangeListener(SurfaceSizeChangeListener listener) {
+        mSizeChangeListeners.remove(listener);
     }
 
     @Override
@@ -103,6 +116,12 @@ public class GLSurfaceView extends SurfaceView implements IRenderView, SurfaceHo
     @Override
     public void setRenderMode(RenderMode renderMode) {
         mGLThread.setRenderMode(renderMode);
+    }
+
+    private void handleSizeChange(int h, int w) {
+        for (SurfaceSizeChangeListener sizeChangeListener : mSizeChangeListeners) {
+            sizeChangeListener.onSizeChanged(w, h);
+        }
     }
 
     /**
@@ -159,6 +178,7 @@ public class GLSurfaceView extends SurfaceView implements IRenderView, SurfaceHo
 
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
         mGLThread.onWindowResize(w, h);
+        handleSizeChange(w, h);
     }
 
     @Override

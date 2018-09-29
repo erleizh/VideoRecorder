@@ -27,6 +27,18 @@ public interface IRenderView {
         CONTINUOUSLY, WHEN_DIRTY
     }
 
+    interface SurfaceSizeChangeListener {
+        /**
+         * @param w - The new width of the surface.
+         * @param h - The new height of the surface.
+         */
+        void onSizeChanged(int w, int h);
+    }
+
+    void addSurfaceSizeChangeListener(SurfaceSizeChangeListener listener);
+
+    void removeSurfaceSizeChangeListener(SurfaceSizeChangeListener listener);
+
     /**
      * Get the view type
      *
@@ -223,6 +235,7 @@ public interface IRenderView {
 
         /**
          * When Activity destroy needs to be called
+         * Called on the UI thread
          */
         void release();
     }

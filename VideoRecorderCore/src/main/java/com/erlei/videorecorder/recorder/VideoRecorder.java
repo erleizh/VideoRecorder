@@ -248,12 +248,12 @@ public class VideoRecorder implements RenderThread.RenderCallBack, IVideoRecorde
     public synchronized void onDrawFrame(CameraGLRenderer renderer) {
         //使用mSync同步锁将导致录制开始的时候卡顿一下
 //        && !mRequestStart && !mRequestStop
-        if (mInputWindowSurface != null && mVideoEncoder != null && mRecordEnabled && mMuxerRunning && mPreviewState) {
-            mInputWindowSurface.makeCurrent();
-            mVideoEncoder.frameAvailableSoon();
-            renderer.onDrawFrame();
-            mInputWindowSurface.swapBuffers();
-        }
+            if (mInputWindowSurface != null && mVideoEncoder != null && mRecordEnabled && mMuxerRunning && mPreviewState) {
+                mInputWindowSurface.makeCurrent();
+                mVideoEncoder.frameAvailableSoon();
+                renderer.onDrawFrame();
+                mInputWindowSurface.swapBuffers();
+            }
 
         if (mByteBuffer != null && mTakePicture) {
             mByteBuffer.rewind();

@@ -9,25 +9,28 @@ import com.erlei.gdx.android.EglCore;
 import com.erlei.gdx.android.EglSurfaceBase;
 import com.erlei.gdx.graphics.CameraTexture;
 import com.erlei.gdx.graphics.Mesh;
+import com.erlei.gdx.graphics.OrthographicCamera;
 import com.erlei.gdx.graphics.Pixmap;
 import com.erlei.gdx.graphics.Texture;
 import com.erlei.gdx.graphics.VertexAttribute;
-import com.erlei.gdx.graphics.VertexAttributes;
 import com.erlei.gdx.graphics.glutils.FrameBuffer;
 import com.erlei.gdx.graphics.glutils.ShaderProgram;
+import com.erlei.gdx.math.Matrix4;
 import com.erlei.gdx.utils.Logger;
+
+import javax.microedition.khronos.opengles.GL10;
 
 class CameraGLRender extends Gdx implements SurfaceTexture.OnFrameAvailableListener {
 
     private final ICameraPreview mCameraPreview;
     private Logger mLogger = new Logger("CameraGLRender");
-
-    private SurfaceTexture mSurfaceTexture;
     private CameraTexture mCameraTexture;
     private ShaderProgram mProgram2d;
     private ShaderProgram mProgramOES;
     private float[] mTexMatrixOES = new float[16];
+    private Matrix4 mMatrix4 = new Matrix4();
     private Mesh mMesh;
+    private OrthographicCamera mOrthographicCamera;
 
     CameraGLRender(Context context, ICameraPreview renderView) {
         super(context, renderView);
@@ -37,21 +40,49 @@ class CameraGLRender extends Gdx implements SurfaceTexture.OnFrameAvailableListe
     @Override
     public void create(EglCore egl, EglSurfaceBase eglSurface) {
         super.create(egl, eglSurface);
-        mLogger.debug("create(" + mCameraPreview.getSurfaceWidth() + "x" + mCameraPreview.getSurfaceHeight() + ")");
+        mLogger.debug("create(" + getWidth() + "x" + getHeight() + ")");
         initSurfaceTexture();
         initFrameBuffers();
         initShaderProgram();
         initMesh();
-        mCameraPreview.startPreview(mSurfaceTexture);
+        mOrthographicCamera = new OrthographicCamera(getWidth(), getHeight());
+        mCameraPreview.startPreview(mCameraTexture.getSurfaceTexture());
     }
 
     protected void initMesh() {
-        mMesh = new Mesh(true,4,6,VertexAttribute.Position(),VertexAttribute.ColorPacked(),VertexAttribute.TexCoords(0));
-        mMesh.setVertices(new float[] {-0.5f, -0.5f, 0, 1, 1, 1, 1, 0, 1, 0.5f, -0.5f, 0, 1, 1, 1, 1, 1, 1, 0.5f, 0.5f, 0, 1, 1, 1,
-                1, 1, 0, -0.5f, 0.5f, 0, 1, 1, 1, 1, 0, 0});
-        mMesh.setIndices(new short[] {0, 1, 2, 2, 3, 0});
+        float[] verts = new float[20];
+        int i = 0;
+
+        verts[i++] = -1; // x1
+        verts[i++] = -1; // y1
+        verts[i++] = 0;
+        verts[i++] = 0f; // u1
+        verts[i++] = 0f; // v1
+
+        verts[i++] = 1f; // x2
+        verts[i++] = -1; // y2
+        verts[i++] = 0;
+        verts[i++] = 1f; // u2
+        verts[i++] = 0f; // v2
+
+        verts[i++] = 1f; // x3
+        verts[i++] = 1f; // y2
+        verts[i++] = 0;
+        verts[i++] = 1f; // u3
+        verts[i++] = 1f; // v3
+
+        verts[i++] = -1; // x4
+        verts[i++] = 1f; // y4
+        verts[i++] = 0;
+        verts[i++] = 0f; // u4
+        verts[i] = 1f; // v4
+
+        mMesh = new Mesh(true, 4, 0,
+                VertexAttribute.Position(), VertexAttribute.TexCoords(0));
+        mMesh.setVertices(verts);
 
     }
+
 
     protected void initShaderProgram() {
         mProgram2d = new ShaderProgram(files.internal("shader/vertex_shader.glsl"), files.internal("shader/fragment_shader_2d.glsl"));
@@ -61,9 +92,7 @@ class CameraGLRender extends Gdx implements SurfaceTexture.OnFrameAvailableListe
     protected void initFrameBuffers() {
         FrameBuffer frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, getBackBufferWidth(), getBackBufferHeight(), false);
 
-
     }
-
 
 
     @Override
@@ -75,7 +104,7 @@ class CameraGLRender extends Gdx implements SurfaceTexture.OnFrameAvailableListe
     @Override
     public void resume() {
         super.resume();
-        mCameraPreview.startPreview(mSurfaceTexture);
+        mCameraPreview.startPreview(mCameraTexture.getSurfaceTexture());
         mLogger.debug("resume");
     }
 
@@ -83,11 +112,24 @@ class CameraGLRender extends Gdx implements SurfaceTexture.OnFrameAvailableListe
     public void render(EglSurfaceBase windowSurface, Runnable swapErrorRunnable) {
         super.render(windowSurface, swapErrorRunnable);
         mLogger.debug("render");
-        mSurfaceTexture.updateTexImage();
-        mSurfaceTexture.getTransformMatrix(mTexMatrixOES);
+        mCameraTexture.getSurfaceTexture().updateTexImage();
+        mCameraTexture.getSurfaceTexture().getTransformMatrix(mTexMatrixOES);
+        mMatrix4.set(mTexMatrixOES);
+
 
         clear();
+        mProgramOES.begin();
+        updateProgram(mProgramOES);
 
+        mProgramOES.setUniformMatrix("u_projectionViewMatrix", mOrthographicCamera.combined);
+        mMesh.render(mProgramOES, GL10.GL_TRIANGLE_FAN);
+        mProgramOES.end();
+
+        renderEnd();
+
+    }
+
+    private void updateProgram(ShaderProgram program) {
 
     }
 
@@ -102,29 +144,17 @@ class CameraGLRender extends Gdx implements SurfaceTexture.OnFrameAvailableListe
     public void dispose() {
         super.dispose();
         mCameraPreview.stopPreview();
+        mCameraTexture.dispose();
         mLogger.debug("dispose");
     }
 
 
-    private void deleteSurfaceTexture() {
-        mLogger.debug("deleteSurfaceTexture");
-        if (mSurfaceTexture != null) {
-            mSurfaceTexture.release();
-            mSurfaceTexture = null;
-            mCameraTexture.dispose();
-        }
-    }
-
     protected void initSurfaceTexture() {
         mLogger.debug("initSurfaceTexture");
-        deleteSurfaceTexture();
-
-        mCameraTexture = new CameraTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+        mCameraTexture = new CameraTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, new CameraTexture.CameraTextureData(getWidth(), getHeight()));
         mCameraTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         mCameraTexture.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge);
-
-        mSurfaceTexture = new SurfaceTexture(mCameraTexture.getTextureObjectHandle());
-        mSurfaceTexture.setOnFrameAvailableListener(this);
+        mCameraTexture.getSurfaceTexture().setOnFrameAvailableListener(this);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.erlei.videorecorder.fragment;
+package com.erlei.tests;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -8,9 +8,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.erlei.gdx.android.widget.GLSurfaceView;
 import com.erlei.gdx.android.widget.IRenderView;
-import com.erlei.videorecorder.R;
-import com.erlei.videorecorder.renders.Renderer;
 
 /**
  * Created by lll on 2018/9/14
@@ -31,7 +30,7 @@ public class GdxTestFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_gdx_test, container, false);
+        return mSurfaceView = new GLSurfaceView(getContext());
     }
 
     @Override
@@ -42,7 +41,6 @@ public class GdxTestFragment extends Fragment {
     }
 
     private void initView(View view) {
-        mSurfaceView = view.findViewById(R.id.SurfaceView);
         mSurfaceView.setRenderer(getRenderer());
         mSurfaceView.setRenderMode(IRenderView.RenderMode.CONTINUOUSLY);
     }
@@ -50,7 +48,9 @@ public class GdxTestFragment extends Fragment {
     @NonNull
     private IRenderView.Renderer getRenderer() {
         IRenderView.Renderer renderer = null;
-        renderer = new Renderer(getContext(), mSurfaceView);
+//        renderer = new Renderer(getContext(), mSurfaceView);
+//        renderer = new MeshTestRender(getContext(), mSurfaceView);
+        renderer = new TextureRender(getContext(), mSurfaceView);
         return renderer;
     }
 

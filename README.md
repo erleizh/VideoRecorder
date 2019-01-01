@@ -1,4 +1,7 @@
 # VideoRecorder
+#### 警告
+此项目是作为个人学习用，包含许多未解决的bug
+
 #### Feature
 
 - [x] 高性能任意尺寸视频录制 (以相机支持的最大尺寸预览)
@@ -18,7 +21,7 @@
 - [ ] 抖音特效
 
 #### API
-```
+```java
     private void initRecorder() {
         ICameraPreview cameraPreview = new DefaultCameraPreview(mTextureView);
 //        ICameraPreview cameraPreview = new OffscreenCameraPreview(getContext(), 1920, 1920); //离屏录制

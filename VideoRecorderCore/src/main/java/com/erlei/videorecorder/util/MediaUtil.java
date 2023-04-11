@@ -6,6 +6,8 @@ import android.media.MediaMetadataRetriever;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.IOException;
+
 /**
  * Created by lll on 2017/12/7.
  * 视频工具类
@@ -30,7 +32,7 @@ public class MediaUtil {
         } finally {
             try {
                 mmr.release();
-            } catch (RuntimeException e) {
+            } catch (RuntimeException | IOException e) {
                 e.printStackTrace();
             }
         }
@@ -65,7 +67,7 @@ public class MediaUtil {
         } finally {
             try {
                 mmr.release();
-            } catch (RuntimeException e) {
+            } catch (RuntimeException | IOException e) {
                 e.printStackTrace();
                 Log.e(TAG, "MediaMetadataRetriever release exception " + e);
             }
@@ -96,7 +98,7 @@ public class MediaUtil {
         } finally {
             try {
                 retriever.release();
-            } catch (RuntimeException e) {
+            } catch (RuntimeException | IOException e) {
                 e.printStackTrace();
             }
         }
